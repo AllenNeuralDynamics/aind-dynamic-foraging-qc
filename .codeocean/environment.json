@@ -9,34 +9,44 @@
 		"pip": {
 			"packages": [
 				{
-					"name": "aind-data-access-api[docdb]"
+					"name": "aind-data-access-api[docdb]",
+					"version": "0.17.1"
 				},
 				{
-					"name": "aind-data-schema"
+					"name": "aind-data-schema",
+					"version": "1.3.0"
 				},
 				{
-					"name": "aind-data-schema-models"
+					"name": "aind-data-schema-models",
+					"version": "0.7.5"
 				},
 				{
-					"name": "aind-log-utils"
+					"name": "aind-log-utils",
+					"version": "0.2.4"
 				},
 				{
-					"name": "aws-requests-auth"
+					"name": "aws-requests-auth",
+					"version": "0.4.3"
 				},
 				{
-					"name": "boto3"
+					"name": "boto3",
+					"version": "1.36.2"
 				},
 				{
-					"name": "kachery-cloud"
+					"name": "kachery-cloud",
+					"version": "0.4.10"
 				},
 				{
-					"name": "matplotlib"
+					"name": "matplotlib",
+					"version": "3.7.5"
 				},
 				{
-					"name": "numpy"
+					"name": "numpy",
+					"version": "1.24.4"
 				},
 				{
-					"name": "pandas"
+					"name": "pandas",
+					"version": "2.0.3"
 				}
 			],
 			"options": {},
