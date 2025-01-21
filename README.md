@@ -1,3 +1,3 @@
-# aind-capsule-template
+# aind-dynamic-foraging-qc
 
-Basic structure of a capsule to be customized as needed.
+Capsule for QC
