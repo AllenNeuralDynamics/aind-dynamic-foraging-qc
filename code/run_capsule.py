@@ -102,7 +102,7 @@ def calculate_lick_intervals(behavior_json):
 
 def main():
     # Paths and setup
-    base_path = Path("/data/test_raw_data")
+    base_path = Path("/data/test_raw_data_2")
     results_folder = Path("../results")
     results_folder.mkdir(parents=True, exist_ok=True)
 
