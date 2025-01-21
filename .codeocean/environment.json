@@ -2,6 +2,45 @@
 	"version": 1,
 	"base_image": "codeocean/jupyterlab:3.0.9-miniconda4.9.2-python3.8-ubuntu20.04",
 	"options": {
+		"registry_host_arg": true,
 		"git_ask_pass": true
+	},
+	"installers": {
+		"pip": {
+			"packages": [
+				{
+					"name": "aind-data-access-api[docdb]"
+				},
+				{
+					"name": "aind-data-schema"
+				},
+				{
+					"name": "aind-data-schema-models"
+				},
+				{
+					"name": "aind-log-utils"
+				},
+				{
+					"name": "aws-requests-auth"
+				},
+				{
+					"name": "boto3"
+				},
+				{
+					"name": "kachery-cloud"
+				},
+				{
+					"name": "matplotlib"
+				},
+				{
+					"name": "numpy"
+				},
+				{
+					"name": "pandas"
+				}
+			],
+			"options": {},
+			"pre_install_options": {}
+		}
 	}
 }
