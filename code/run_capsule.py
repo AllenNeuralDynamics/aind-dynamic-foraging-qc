@@ -103,7 +103,7 @@ def calculate_lick_intervals(behavior_json):
 
 def main():
     # Paths and setup
-    base_path = Path("/data/test_raw_data_2")
+    base_path = Path("/data/fiber_raw_data")
     results_folder = Path("../results")
     results_folder.mkdir(parents=True, exist_ok=True)
     qc_folder = Path("../results/aind-dynamic-foraging-qc")
