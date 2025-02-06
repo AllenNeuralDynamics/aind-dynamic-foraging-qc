@@ -117,7 +117,13 @@ def main():
     setup_logging("aind-dynamic-foraging-qc", mouse_id=subject_id, session_name=asset_name)
 
     # Load behavior JSON
-    behavior_json = load_json_file(next(base_path.glob("behavior/*.json")))
+    # Regex pattern is <subject_id>_YYYY-MM-DD_HH-MM-SS.json
+    pattern = "/data/fiber_raw_data/behavior/[0-9]*_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]-[0-9][0-9]-[0-9][0-9].json"
+    matching_behavior_files = glob.glob(pattern)
+    if matching_behavior_files:
+        behavior_json = load_json_file(matching_behavior_files[0])
+    else:
+        logging.info("NO BEHAVIOR JSON")
 
     # Create evaluations with our timezone
     seattle_tz = pytz.timezone("America/Los_Angeles")
