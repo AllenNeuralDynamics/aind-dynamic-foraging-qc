@@ -105,6 +105,8 @@ def main():
     base_path = Path("/data/test_raw_data_2")
     results_folder = Path("../results")
     results_folder.mkdir(parents=True, exist_ok=True)
+    qc_folder = Path("../results/aind-dynamic-foraging-qc")
+    qc_folder.mkdir(parents=True, exist_ok=True)
 
     # Load JSON files
     subject_data = load_json_file(base_path / "subject.json")
