@@ -1,6 +1,8 @@
 import logging
 import csv
 import json
+import os
+import glob
 import numpy as np
 from pathlib import Path
 from datetime import datetime, timezone
@@ -59,9 +61,9 @@ def create_evaluation(
 
 
 def calculate_lick_intervals(behavior_json):
-    right = behavior_json['B_RightLickTime']
-    left = behavior_json['B_LeftLickTime']
-    threshold = .1 # time in ms to consider as a fast interval
+    right = behavior_json["B_RightLickTime"]
+    left = behavior_json["B_LeftLickTime"]
+    threshold = 0.1  # time in ms to consider as a fast interval
     same_side_l = np.diff(left)
     same_side_r = np.diff(right)
     if len(right) > 0:
@@ -84,25 +86,33 @@ def calculate_lick_intervals(behavior_json):
         stacked_left = np.column_stack((left_dummy, left))
         # concatenate stacked_right and stacked_left then sort based on time element
         # e.g. [[-1, 10], [1, 15], [-1, 20], [1, 25]...]. Ones added to assign lick side to times
-        merged_sorted = np.array(sorted(np.concatenate((stacked_right, stacked_left)),
-                            key=lambda x: x[1]))
-        diffs = np.diff(merged_sorted[:, 0])    # take difference of 1 (right) or -1 (left)
+        merged_sorted = np.array(
+            sorted(np.concatenate((stacked_right, stacked_left)), key=lambda x: x[1])
+        )
+        diffs = np.diff(
+            merged_sorted[:, 0]
+        )  # take difference of 1 (right) or -1 (left)
         # take difference of next index with previous at indices where directions are opposite
-        cross_sides = np.array([merged_sorted[i + 1, 1] - merged_sorted[i, 1] for i in np.where(diffs != 0)])[0]
+        cross_sides = np.array(
+            [
+                merged_sorted[i + 1, 1] - merged_sorted[i, 1]
+                for i in np.where(diffs != 0)
+            ]
+        )[0]
         cross_side_frac = round(np.mean(cross_sides <= threshold), 4)
         CrossSideIntervalPercent = cross_side_frac * 100
         results = {
-            'LeftLickIntervalPercent':LeftLickIntervalPercent,
-            'RightLickIntervalPercent':RightLickIntervalPercent,
-            'SameSideIntervalPercent':same_side_frac *100, 
-            'CrossSideIntervalPercent':CrossSideIntervalPercent
+            "LeftLickIntervalPercent": LeftLickIntervalPercent,
+            "RightLickIntervalPercent": RightLickIntervalPercent,
+            "SameSideIntervalPercent": same_side_frac * 100,
+            "CrossSideIntervalPercent": CrossSideIntervalPercent,
         }
         return results
 
 
 def main():
     # Paths and setup
-    base_path = Path("/data/test_raw_data_2")
+    base_path = Path("/data/fiber_raw_data")
     results_folder = Path("../results")
     results_folder.mkdir(parents=True, exist_ok=True)
 
@@ -114,184 +124,201 @@ def main():
 
     data_disc_json = load_json_file(base_path / "data_description.json")
     asset_name = data_disc_json.get("name")
-    setup_logging("aind-dynamic-foraging-qc", mouse_id=subject_id, session_name=asset_name)
+    setup_logging(
+        "aind-dynamic-foraging-qc", mouse_id=subject_id, session_name=asset_name
+    )
 
     # Load behavior JSON
-    behavior_json = load_json_file(next(base_path.glob("behavior/*.json")))
+    # Regex pattern is <subject_id>_YYYY-MM-DD_HH-MM-SS.json
+    pattern = "/data/fiber_raw_data/behavior/[0-9]*_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]-[0-9][0-9]-[0-9][0-9].json"
+    matching_behavior_files = glob.glob(pattern)
+    if matching_behavior_files:
+        behavior_json = load_json_file(matching_behavior_files[0])
+    else:
+        logging.info("NO BEHAVIOR JSON")
 
     # Create evaluations with our timezone
     seattle_tz = pytz.timezone("America/Los_Angeles")
     evaluations = []
 
-    if 'drop_frames_tag' in behavior_json:
-        logging.info('Running dropped frames check')
-        evaluations.append(
-            create_evaluation(
-                "dropped frames check", 
-                "pass when there are no dropped frames", 
-                [QCMetric(
-                    name="dropped frames",
-                    value = behavior_json['drop_frames_tag'],
-                    status_history=[
-                        Bool2Status(
-                            behavior_json['drop_frames_tag']==0, t=datetime.now(seattle_tz)
-                        )
-                    ]
-                )],
-                modality=Modality.BEHAVIOR_VIDEOS
-            )
-        )
+    if "drop_frames_tag" in behavior_json:
+        logging.info("Running dropped frames check")
+        camera_metrics = []
         # If we have dropped frames, then cameras will be listed here with their recorded frames
         # iterate through each camera and report the number of dropped frames
-        for camera in behavior_json['frame_num']:
-            diff = behavior_json['trigger_length'] - behavior_json['frame_num'][camera]
-            logging.info('Running dropped frames check for camera {}'.format(camera))
-            evaluations.append(
-                create_evaluation(
-                    "dropped frames for each camera", 
-                    "pass when there are no dropped frames", 
-                    [QCMetric(
-                        name="dropped frames for camera {}".format(camera),
-                        value = diff,
+        frame_metric = QCMetric(
+            name="dropped frames",
+            value=behavior_json["drop_frames_tag"],
+            status_history=[
+                Bool2Status(
+                    behavior_json["drop_frames_tag"] == 0, t=datetime.now(seattle_tz),
+                )
+            ],
+        )
+        for camera in behavior_json["frame_num"]:
+            diff = behavior_json["trigger_length"] - behavior_json["frame_num"][camera]
+            logging.info("Running dropped frames check for camera {}".format(camera))
+            camera_metrics.append(
+                QCMetric(
+                    name="dropped frames for camera {}".format(camera),
+                    value=diff,
+                    status_history=[Bool2Status(diff == 0, t=datetime.now(seattle_tz))],
+                )
+            )
+        evaluations.append(
+            create_evaluation(
+                "dropped frames check",
+                "pass when there are no dropped frames",
+                [frame_metric, *camera_metrics],
+                modality=Modality.BEHAVIOR_VIDEOS,
+            )
+        )
+    else:
+        logging.info("SKIPPING dropped frames check, no drop_frames_tag")
+
+    if "Experimenter" in behavior_json:
+        logging.info("Running check for researcher name")
+        evaluations.append(
+            create_evaluation(
+                "Check researcher name",
+                "pass when researcher name is not default name",
+                [
+                    QCMetric(
+                        name="researcher name",
+                        value=behavior_json["Experimenter"],
                         status_history=[
                             Bool2Status(
-                                diff==0, t=datetime.now(seattle_tz)
+                                behavior_json["Experimenter"]
+                                != "the ghost in the shell",
+                                t=datetime.now(seattle_tz),
                             )
-                        ]
-                    )],
-                    modality=Modality.BEHAVIOR_VIDEOS
-                )
-            )
-    else:
-       logging.info('SKIPPING dropped frames check, no drop_frames_tag')
-            
-    if 'Experimenter' in behavior_json:
-        logging.info('Running check for researcher name')
-        evaluations.append(
-            create_evaluation(
-                "Check researcher name", 
-                "pass when researcher name is not default name", 
-                [QCMetric(
-                    name="researcher name",
-                    value = behavior_json['Experimenter'],
-                    status_history=[
-                        Bool2Status(
-                            behavior_json['Experimenter']!='the ghost in the shell', t=datetime.now(seattle_tz)
-                        )
-                    ]
-                )]
+                        ],
+                    )
+                ],
             )
         )
     else:
-        logging.info('SKIPPING check for researcher name, no Experimenter')
+        logging.info("SKIPPING check for researcher name, no Experimenter")
 
-    if 'dirty_files' in behavior_json:
-        logging.info('Running check for untracked file changes')
+    if "dirty_files" in behavior_json:
+        logging.info("Running check for untracked file changes")
         evaluations.append(
             create_evaluation(
-                "Check for untracked file changes", 
-                "pass when no dirty files where in the code repository", 
-                [QCMetric(
-                    name="untracked local changes",
-                    value = behavior_json['dirty_files'],
-                    status_history=[
-                        Bool2Status(
-                            not behavior_json['repo_dirty_flag'], t=datetime.now(seattle_tz)
-                        )
-                    ]
-                )]
+                "Check for untracked file changes",
+                "pass when no dirty files where in the code repository",
+                [
+                    QCMetric(
+                        name="untracked local changes",
+                        value=behavior_json["dirty_files"],
+                        status_history=[
+                            Bool2Status(
+                                not behavior_json["repo_dirty_flag"],
+                                t=datetime.now(seattle_tz),
+                            )
+                        ],
+                    )
+                ],
             )
         )
     else:
-        logging.info('SKIPPING check for untracked file changes, no dirty_files')
+        logging.info("SKIPPING check for untracked file changes, no dirty_files")
 
     # Check side bias
-    if 'B_Bias' in behavior_json:
-        logging.info('Running bias check')
-        mean_bias = np.mean(behavior_json['B_Bias'])
-        max_bias = behavior_json['B_Bias'][np.argmax(np.abs(behavior_json['B_Bias']))]
+    if "B_Bias" in behavior_json:
+        logging.info("Running bias check")
+        mean_bias = np.mean(behavior_json["B_Bias"])
+        max_bias = behavior_json["B_Bias"][np.argmax(np.abs(behavior_json["B_Bias"]))]
         evaluations.append(
             create_evaluation(
-                "Side bias", 
-                "pass when average bias is less than 0.75", 
-                [QCMetric(
-                    name="average side bias",
-                    value = mean_bias,
-                    status_history=[
-                        Bool2Status(
-                            np.abs(mean_bias) < 0.75, t=datetime.now(seattle_tz)
-                        )
-                    ]
-                ),
-                QCMetric(
-                    name="Max side bias",
-                    value = max_bias,
-                    status_history=[
-                        Bool2Status(
-                            np.abs(max_bias) < 1, t=datetime.now(seattle_tz)
-                        )
-                    ]
-                )
-                ]
+                "Side bias",
+                "pass when average bias is less than 0.75",
+                [
+                    QCMetric(
+                        name="average side bias",
+                        value=mean_bias,
+                        status_history=[
+                            Bool2Status(
+                                np.abs(mean_bias) < 0.75, t=datetime.now(seattle_tz)
+                            )
+                        ],
+                    ),
+                    QCMetric(
+                        name="Max side bias",
+                        value=max_bias,
+                        status_history=[
+                            Bool2Status(
+                                np.abs(max_bias) < 1, t=datetime.now(seattle_tz)
+                            )
+                        ],
+                    ),
+                ],
             )
         )
     else:
-        logging.info('SKIPPING bias check, no B_Bias')
+        logging.info("SKIPPING bias check, no B_Bias")
 
     # Check side bias
-    if ('B_LeftLickTime' in behavior_json) and ('B_RightLickTime' in behavior_json):
-        logging.info('Running lick interval check')
+    if ("B_LeftLickTime" in behavior_json) and ("B_RightLickTime" in behavior_json):
+        logging.info("Running lick interval check")
         intervals = calculate_lick_intervals(behavior_json)
         evaluations.append(
             create_evaluation(
-                "Lick Intervals", 
-                "pass when lick intervals <100ms are less than 10 percent of licks", 
-                [QCMetric(
-                    name="Left Lick Interval (%)",
-                    value = intervals['LeftLickIntervalPercent'],
-                    status_history=[
-                        Bool2Status(
-                            intervals['LeftLickIntervalPercent'] < 10, t=datetime.now(seattle_tz)
-                        )
-                    ]
-                ),
-                QCMetric(
-                    name="Right Lick Interval (%)",
-                    value = intervals['RightLickIntervalPercent'],
-                    status_history=[
-                        Bool2Status(
-                            intervals['RightLickIntervalPercent'] < 10, t=datetime.now(seattle_tz)
-                        )
-                    ]
-                ),
-                QCMetric(
-                    name="Cross Side Lick Interval (%)",
-                    value = intervals['CrossSideIntervalPercent'],
-                    status_history=[
-                        Bool2Status(
-                            intervals['CrossSideIntervalPercent'] < 10, t=datetime.now(seattle_tz)
-                        )
-                    ]
-                )]
+                "Lick Intervals",
+                "pass when lick intervals <100ms are less than 10 percent of licks",
+                [
+                    QCMetric(
+                        name="Left Lick Interval (%)",
+                        value=intervals["LeftLickIntervalPercent"],
+                        status_history=[
+                            Bool2Status(
+                                intervals["LeftLickIntervalPercent"] < 10,
+                                t=datetime.now(seattle_tz),
+                            )
+                        ],
+                    ),
+                    QCMetric(
+                        name="Right Lick Interval (%)",
+                        value=intervals["RightLickIntervalPercent"],
+                        status_history=[
+                            Bool2Status(
+                                intervals["RightLickIntervalPercent"] < 10,
+                                t=datetime.now(seattle_tz),
+                            )
+                        ],
+                    ),
+                    QCMetric(
+                        name="Cross Side Lick Interval (%)",
+                        value=intervals["CrossSideIntervalPercent"],
+                        status_history=[
+                            Bool2Status(
+                                intervals["CrossSideIntervalPercent"] < 10,
+                                t=datetime.now(seattle_tz),
+                            )
+                        ],
+                    ),
+                ],
             )
         )
     else:
-        logging.info('SKIPPING lick interval check')
+        logging.info("SKIPPING lick interval check")
 
-    logging.info('Running minimum trial check')
+    logging.info("Running minimum trial check")
     evaluations.append(
         create_evaluation(
-            "Check for minimum trials", 
-            "pass when at least 50 trials were performed", 
-            [QCMetric(
-                name="Number of completed trials",
-                value = behavior_json.get('BS_FinisheTrialN',0),
-                status_history=[
-                    Bool2Status(
-                        behavior_json.get('BS_FinisheTrialN',0) > 50, t=datetime.now(seattle_tz)
-                    )
-                ]
-            )]
+            "Check for minimum trials",
+            "pass when at least 50 trials were performed",
+            [
+                QCMetric(
+                    name="Number of completed trials",
+                    value=behavior_json.get("BS_FinisheTrialN", 0),
+                    status_history=[
+                        Bool2Status(
+                            behavior_json.get("BS_FinisheTrialN", 0) > 50,
+                            t=datetime.now(seattle_tz),
+                        )
+                    ],
+                )
+            ],
         )
     )
 
