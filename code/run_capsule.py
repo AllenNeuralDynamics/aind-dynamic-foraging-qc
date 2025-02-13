@@ -143,35 +143,23 @@ def main():
 
     if "drop_frames_tag" in behavior_json:
         logging.info("Running dropped frames check")
-        evaluations.append(
-            create_evaluation(
-                "dropped frames check",
-                "pass when there are no dropped frames",
-                [
-                    QCMetric(
-                        name="dropped frames",
-                        value=behavior_json["drop_frames_tag"],
-                        status_history=[
-                            Bool2Status(
-                                behavior_json["drop_frames_tag"] == 0,
-                                t=datetime.now(seattle_tz),
-                            )
-                        ],
-                    )
-                ],
-                modality=Modality.BEHAVIOR_VIDEOS,
-            )
-        )
+        camera_metrics =  []
         # If we have dropped frames, then cameras will be listed here with their recorded frames
         # iterate through each camera and report the number of dropped frames
+        frame_metric = QCMetric(
+            name="dropped frames",
+            value=behavior_json["drop_frames_tag"],
+            status_history=[
+                Bool2Status(
+                    behavior_json["drop_frames_tag"] == 0,
+                    t=datetime.now(seattle_tz),
+                )
+            ],
+        )
         for camera in behavior_json["frame_num"]:
             diff = behavior_json["trigger_length"] - behavior_json["frame_num"][camera]
             logging.info("Running dropped frames check for camera {}".format(camera))
-            evaluations.append(
-                create_evaluation(
-                    "dropped frames for each camera",
-                    "pass when there are no dropped frames",
-                    [
+            camera_metrics.append(                
                         QCMetric(
                             name="dropped frames for camera {}".format(camera),
                             value=diff,
@@ -179,10 +167,18 @@ def main():
                                 Bool2Status(diff == 0, t=datetime.now(seattle_tz))
                             ],
                         )
-                    ],
-                    modality=Modality.BEHAVIOR_VIDEOS,
-                )
             )
+        evaluations.append(
+            create_evaluation(
+                "dropped frames check",
+                "pass when there are no dropped frames",
+                [
+                    frame_metric, 
+                    *camera_metrics
+                ],
+                modality=Modality.BEHAVIOR_VIDEOS,
+            )
+        )
     else:
         logging.info("SKIPPING dropped frames check, no drop_frames_tag")
 
