@@ -129,9 +129,6 @@ def main():
     )
 
     session_json = load_json_file(base_path / "session.json")
-    stimulus_start = session_json['stimulus_epochs'][0]['stimulus_start_time']
-    stimulus_end = session_json['stimulus_epochs'][0]['stimulus_end_time']
-    session_length = datetime.fromisoformat(stimulus_end) - datetime.fromisoformat(stimulus_start) 
  
     # Load behavior JSON
     # Regex pattern is <subject_id>_YYYY-MM-DD_HH-MM-SS.json
@@ -298,6 +295,13 @@ def main():
         logging.info("SKIPPING lick interval check")
 
     logging.info("Running session length check")
+    if ('stimulus_epochs' in session_json) and ('stimulus_start_time' in session_json['stimulus_epochs']):
+        stimulus_start = session_json['stimulus_epochs'][0]['stimulus_start_time']
+        stimulus_end = session_json['stimulus_epochs'][0]['stimulus_end_time']
+        session_length = datetime.fromisoformat(stimulus_end) - datetime.fromisoformat(stimulus_start) 
+    else:
+        session_length = timedelta(minutes=0)
+
     evaluations.append(
         create_evaluation(
             "Session Length Check",
