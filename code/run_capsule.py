@@ -109,12 +109,34 @@ def calculate_lick_intervals(behavior_json):
         }
         return results
 
+def plot_bias(behavior_json):
+    plt.figure()
+    plt.xlabel('Time from first go cue(s)')
+    plt.ylabel('Side Bias')
+    plt.axhline(+0.7,color='r', linestyle='--')
+    plt.axhline(-0.7,color='r', linestyle='--')
+    plt.axhline(0,color='k', linestyle='--')
+    plt.ylim([-1,+1]) 
+
+    if len(behavior_json['B_GoCueTime']) == len(behavior_json['B_GoCueTime'):
+        plt.plot(np.array(behavior_json['B_GoCueTime'])-behavior_json['B_GoCueTime'][0],behavior_json['B_Bias'],'k',linewidth=2)
+        start = 0
+        stop = behavior_json['B_GoCueTime'][-1] - behavior_json['B_GoCueTime'][0]
+        plt.xlim([start,stop])
+    else:
+        plt.plot(behavior_json['B_Bias'],'k',linewidth=2)
+
+    plt.savefig(f"{results_folder}/side_bias.png", dpi=300, bbox_inches="tight")
 
 def main():
     # Paths and setup
     base_path = Path("/data/fiber_raw_data")
     results_folder = Path("../results")
     results_folder.mkdir(parents=True, exist_ok=True)
+    qc_folder = Path("../results/qc-raw")
+    qc_folder.mkdir(parents=True, exist_ok=True)
+
+    ref_folder = Path("qc-raw")
 
     # Load JSON files
     subject_data = load_json_file(base_path / "subject.json")
@@ -129,6 +151,7 @@ def main():
     )
 
     session_json = load_json_file(base_path / "session.json")
+    plot_bias(behavior_json,results_folder)
  
     # Load behavior JSON
     # Regex pattern is <subject_id>_YYYY-MM-DD_HH-MM-SS.json
@@ -233,6 +256,7 @@ def main():
                                 np.abs(mean_bias) < 0.75, t=datetime.now(seattle_tz)
                             )
                         ],
+                        reference=str(ref_folder / "side_bias.png")
                     ),
                     QCMetric(
                         name="Max side bias",
@@ -242,6 +266,7 @@ def main():
                                 np.abs(max_bias) < 1, t=datetime.now(seattle_tz)
                             )
                         ],
+                        reference=str(ref_folder / "side_bias.png")
                     ),
                 ],
             )
@@ -331,6 +356,8 @@ def main():
             ],
         )
     )
+
+    # TODO - move files?
 
     # Create QC object and save
     qc = QualityControl(evaluations=evaluations)
