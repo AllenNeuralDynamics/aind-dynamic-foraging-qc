@@ -176,16 +176,17 @@ def main():
     else:
         logging.info("SKIPPING dropped frames check, no drop_frames_tag")
 
-    if "Experimenter" in behavior_json:
-        logging.info("Running check for researcher name")
+    if ("Experimenter" in behavior_json) and ("dirty_files" in behavior_json):
+        logging.info("Running check for basic configuration")
         evaluations.append(
             create_evaluation(
-                "Check researcher name",
-                "pass when researcher name is not default name",
+                "Basic Configuration",
+                "pass when researcher name is not default name, and code repo is clean",
                 [
                     QCMetric(
                         name="researcher name",
                         value=behavior_json["Experimenter"],
+                        description='Experimenter name should not be set to the default value of "the ghost in the shell"',
                         status_history=[
                             Bool2Status(
                                 behavior_json["Experimenter"]
@@ -193,22 +194,10 @@ def main():
                                 t=datetime.now(seattle_tz),
                             )
                         ],
-                    )
-                ],
-            )
-        )
-    else:
-        logging.info("SKIPPING check for researcher name, no Experimenter")
-
-    if "dirty_files" in behavior_json:
-        logging.info("Running check for untracked file changes")
-        evaluations.append(
-            create_evaluation(
-                "Check for untracked file changes",
-                "pass when no dirty files where in the code repository",
-                [
+                    ),
                     QCMetric(
                         name="untracked local changes",
+                        description='Whether the code base had untracked changes, and if so, which files',
                         value=behavior_json["dirty_files"],
                         status_history=[
                             Bool2Status(
@@ -221,7 +210,8 @@ def main():
             )
         )
     else:
-        logging.info("SKIPPING check for untracked file changes, no dirty_files")
+        logging.info("SKIPPING check for basic configuration")
+
 
     # Check side bias
     if "B_Bias" in behavior_json:
