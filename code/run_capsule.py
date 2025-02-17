@@ -5,7 +5,7 @@ import os
 import glob
 import numpy as np
 from pathlib import Path
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import pytz
 import matplotlib.pyplot as plt
 from aind_log_utils.log import setup_logging
@@ -128,6 +128,11 @@ def main():
         "aind-dynamic-foraging-qc", mouse_id=subject_id, session_name=asset_name
     )
 
+    session_json = load_json_file(base_path / "session.json")
+    stimulus_start = session_json['stimulus_epochs'][0]['stimulus_start_time']
+    stimulus_end = session_json['stimulus_epochs'][0]['stimulus_end_time']
+    session_length = datetime.fromisoformat(stimulus_end) - datetime.fromisoformat(stimulus_start) 
+ 
     # Load behavior JSON
     # Regex pattern is <subject_id>_YYYY-MM-DD_HH-MM-SS.json
     pattern = "/data/fiber_raw_data/behavior/[0-9]*_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]-[0-9][0-9]-[0-9][0-9].json"
@@ -292,20 +297,31 @@ def main():
     else:
         logging.info("SKIPPING lick interval check")
 
-    logging.info("Running minimum trial check")
+    logging.info("Running session length check")
     evaluations.append(
         create_evaluation(
-            "Check for minimum trials",
-            "pass when at least 50 trials were performed",
+            "Session Length Check",
+            "pass when at least 50 trials were performed, and stimulus epoch was at least 10 minutes",
             [
                 QCMetric(
                     name="Number of completed trials",
+                    description='Must complete at least 50 trials to pass',
                     value=behavior_json.get("BS_FinisheTrialN", 0),
                     status_history=[
                         Bool2Status(
                             behavior_json.get("BS_FinisheTrialN", 0) > 50,
                             t=datetime.now(seattle_tz),
                         )
+                    ],
+                ),
+                QCMetric(
+                    name="Length of stimulus epoch",
+                    description="Must be at least 10 minutes",
+                    value=session_length,
+                    status_history=[
+                        Bool2Status(
+                        session_length > timedelta(minutes=10),
+                        t=datetime.now(seattle_tz),
                     ],
                 )
             ],
