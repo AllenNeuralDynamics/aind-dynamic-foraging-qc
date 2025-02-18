@@ -70,13 +70,13 @@ def calculate_lick_intervals(behavior_json):
         # calculate left interval and fraction
         same_side_l_frac = round(np.mean(same_side_l <= threshold), 4)
         LeftLickIntervalPercent = same_side_l_frac * 100
-    else
+    else:
         LeftLickIntervalPercent = np.nan
     if len(right) > 0:
         # calculate right interval and fraction
         same_side_r_frac = round(np.mean(same_side_r <= threshold), 4)
         RightLickIntervalPercent = same_side_r_frac * 100
-    else
+    else:
         RightLickIntervalPercent = np.nan
     if len(right) > 0 and len(left) > 0:
         # calculate same side lick interval and fraction for both right and left
