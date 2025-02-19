@@ -109,7 +109,7 @@ def calculate_lick_intervals(behavior_json):
         }
         return results
 
-def plot_bias(behavior_json):
+def plot_bias(behavior_json,results_folder):
     plt.figure()
     plt.xlabel('Time from first go cue(s)')
     plt.ylabel('Side Bias')
@@ -118,7 +118,7 @@ def plot_bias(behavior_json):
     plt.axhline(0,color='k', linestyle='--')
     plt.ylim([-1,+1]) 
 
-    if len(behavior_json['B_GoCueTime']) == len(behavior_json['B_GoCueTime'):
+    if len(behavior_json['B_Bias']) == len(behavior_json['B_GoCueTime']):
         plt.plot(np.array(behavior_json['B_GoCueTime'])-behavior_json['B_GoCueTime'][0],behavior_json['B_Bias'],'k',linewidth=2)
         start = 0
         stop = behavior_json['B_GoCueTime'][-1] - behavior_json['B_GoCueTime'][0]
@@ -151,7 +151,7 @@ def main():
     )
 
     session_json = load_json_file(base_path / "session.json")
-    plot_bias(behavior_json,results_folder)
+
  
     # Load behavior JSON
     # Regex pattern is <subject_id>_YYYY-MM-DD_HH-MM-SS.json
@@ -161,6 +161,9 @@ def main():
         behavior_json = load_json_file(matching_behavior_files[0])
     else:
         logging.info("NO BEHAVIOR JSON")
+
+    # Create bias plot
+    plot_bias(behavior_json,results_folder)
 
     # Create evaluations with our timezone
     seattle_tz = pytz.timezone("America/Los_Angeles")
@@ -349,8 +352,9 @@ def main():
                     value=session_length,
                     status_history=[
                         Bool2Status(
-                        session_length > timedelta(minutes=10),
-                        t=datetime.now(seattle_tz),
+                            session_length > timedelta(minutes=10),
+                            t=datetime.now(seattle_tz),
+                        )
                     ],
                 )
             ],
