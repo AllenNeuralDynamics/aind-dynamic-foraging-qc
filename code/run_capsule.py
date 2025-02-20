@@ -162,8 +162,8 @@ def plot_bias(behavior_json,results_folder):
             y1 = [x['y1'] for x in behavior_json['B_StagePositions']]
             y2 = [x['y2'] for x in behavior_json['B_StagePositions']]
         else:
-            y1 = [x['y'] for x in behavior_json['B_StagePositions']]
-            y2 = [x['y'] for x in behavior_json['B_StagePositions']] 
+            y1 = [x['y']*1000 for x in behavior_json['B_StagePositions']]
+            y2 = [x['y']*1000 for x in behavior_json['B_StagePositions']] 
 
         if len(behavior_json['B_Bias']) == len(behavior_json['B_GoCueTime']):
             ax[1].plot(behavior_json['B_GoCueTime'],np.array(x)[:-1]-x[0],'r',label='X')
