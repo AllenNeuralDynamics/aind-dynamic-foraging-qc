@@ -186,7 +186,7 @@ def plot_bias(behavior_json,results_folder):
 
 def main():
     # Paths and setup
-    base_path = Path("/data/fiber_raw_data_3")
+    base_path = Path("/data/fiber_raw_data")
     results_folder = Path("../results/aind-dynamic-foraging-qc")
     results_folder.mkdir(parents=True, exist_ok=True)
 
@@ -207,7 +207,7 @@ def main():
  
     # Load behavior JSON
     # Regex pattern is <subject_id>_YYYY-MM-DD_HH-MM-SS.json
-    pattern = "/data/fiber_raw_data_3/behavior/[0-9]*_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]-[0-9][0-9]-[0-9][0-9].json"
+    pattern = "/data/fiber_raw_data/behavior/[0-9]*_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]-[0-9][0-9]-[0-9][0-9].json"
     matching_behavior_files = glob.glob(pattern)
     if matching_behavior_files:
         behavior_json = load_json_file(matching_behavior_files[0])
