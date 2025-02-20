@@ -110,27 +110,46 @@ def calculate_lick_intervals(behavior_json):
         return results
 
 def plot_bias(behavior_json,results_folder):
+    '''
+        Plot a figure of the side bias, and lick spout position
+        behavior_json, the data saved from the GUI
+        results_folder, the place to save the figure
+    '''
     fig,ax = plt.subplots(nrows=2,figsize=(6,6))
+    
+    # Set up side bias plot
     ax[0].set_ylabel('Side Bias')
     ax[0].axhline(+0.7,color='r', linestyle='--')
     ax[0].axhline(-0.7,color='r', linestyle='--')
     ax[0].axhline(0,color='k', linestyle='--')
     ax[0].set_ylim([-1,+1]) 
-    ax[1].set_ylabel('Lickspout Position \n relative to session start (mm)')
     for side in ['top', 'right']:
         ax[0].spines[side].set_visible(False)
         ax[1].spines[side].set_visible(False)
 
     if len(behavior_json['B_Bias']) == len(behavior_json['B_GoCueTime']):
+        # Bug in older data had only the 200 most recent bias points saved
         if ('B_Bias_CI' in behavior_json):
+            # If we have the confidence intervals, plot them
             lower = [x[0] for x in behavior_json['B_Bias_CI']]
             upper = [x[1] for x in behavior_json['B_Bias_CI']]
-            ax[0].fill_between(np.array(behavior_json['B_GoCueTime'])-behavior_json['B_GoCueTime'][0],behavior_json['B_Bias'], lower, upper, color='gray', alpha=.5)
-        ax[0].plot(np.array(behavior_json['B_GoCueTime'])-behavior_json['B_GoCueTime'][0],behavior_json['B_Bias'],'k',linewidth=2)
+            ax[0].fill_between(
+                np.array(behavior_json['B_GoCueTime'])-behavior_json['B_GoCueTime'][0],
+                behavior_json['B_Bias'], 
+                lower, 
+                upper, 
+                color='gray', 
+                alpha=.5
+                )
+        ax[0].plot(
+            np.array(behavior_json['B_GoCueTime'])-behavior_json['B_GoCueTime'][0],
+            behavior_json['B_Bias'],
+            'k',
+            linewidth=2
+            )
         ax[0].set_xlabel('Time from first go cue(s)')
-        start = 0
         stop = behavior_json['B_GoCueTime'][-1] - behavior_json['B_GoCueTime'][0]
-        ax[0].set_xlim([start,stop])
+        ax[0].set_xlim([0,stop])
     else:
         ax[0].plot(behavior_json['B_Bias'],'k',linewidth=2)
         ax[0].set_xlim([0, len(behavior_json['B_Bias'])])
@@ -161,6 +180,7 @@ def plot_bias(behavior_json,results_folder):
 
         ylims = ax[1].get_ylim()
         ax[1].set_ylim([np.min([-1,ylims[0]]), np.max([1,ylims[1]])])
+        ax[1].set_ylabel('Lickspout Position \n relative to session start (mm)')
         ax[1].legend()           
     plt.savefig(f"{results_folder}/side_bias.png", dpi=300, bbox_inches="tight")
 
