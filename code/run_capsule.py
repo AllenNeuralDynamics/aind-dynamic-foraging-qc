@@ -110,33 +110,65 @@ def calculate_lick_intervals(behavior_json):
         return results
 
 def plot_bias(behavior_json,results_folder):
-    plt.figure()
-    plt.xlabel('Time from first go cue(s)')
-    plt.ylabel('Side Bias')
-    plt.axhline(+0.7,color='r', linestyle='--')
-    plt.axhline(-0.7,color='r', linestyle='--')
-    plt.axhline(0,color='k', linestyle='--')
-    plt.ylim([-1,+1]) 
+    fig,ax = plt.subplots(nrows=2,figsize=(6,6))
+    ax[0].set_ylabel('Side Bias')
+    ax[0].axhline(+0.7,color='r', linestyle='--')
+    ax[0].axhline(-0.7,color='r', linestyle='--')
+    ax[0].axhline(0,color='k', linestyle='--')
+    ax[0].set_ylim([-1,+1]) 
+    ax[1].set_ylabel('Lickspout Position \n relative to session start (mm)')
+    for side in ['top', 'right']:
+        ax[0].spines[side].set_visible(False)
+        ax[1].spines[side].set_visible(False)
 
     if len(behavior_json['B_Bias']) == len(behavior_json['B_GoCueTime']):
-        plt.plot(np.array(behavior_json['B_GoCueTime'])-behavior_json['B_GoCueTime'][0],behavior_json['B_Bias'],'k',linewidth=2)
+        if ('B_Bias_CI' in behavior_json):
+            lower = [x[0] for x in behavior_json['B_Bias_CI']]
+            upper = [x[1] for x in behavior_json['B_Bias_CI']]
+            ax[0].fill_between(np.array(behavior_json['B_GoCueTime'])-behavior_json['B_GoCueTime'][0],behavior_json['B_Bias'], lower, upper, color='gray', alpha=.5)
+        ax[0].plot(np.array(behavior_json['B_GoCueTime'])-behavior_json['B_GoCueTime'][0],behavior_json['B_Bias'],'k',linewidth=2)
+        ax[0].set_xlabel('Time from first go cue(s)')
         start = 0
         stop = behavior_json['B_GoCueTime'][-1] - behavior_json['B_GoCueTime'][0]
-        plt.xlim([start,stop])
+        ax[0].set_xlim([start,stop])
     else:
-        plt.plot(behavior_json['B_Bias'],'k',linewidth=2)
+        ax[0].plot(behavior_json['B_Bias'],'k',linewidth=2)
+        ax[0].set_xlim([0, len(behavior_json['B_Bias'])])
+        ax[0].set_xlabel('Trial #')
 
+    if 'B_StagePositions' in behavior_json:
+        x = [x['x'] for x in behavior_json['B_StagePositions']]
+        z = [x['z'] for x in behavior_json['B_StagePositions']]
+        if 'y1' in behavior_json['B_StagePositions'][0]:
+            y1 = [x['y1'] for x in behavior_json['B_StagePositions']]
+            y2 = [x['y2'] for x in behavior_json['B_StagePositions']]
+        else:
+            y1 = [x['y'] for x in behavior_json['B_StagePositions']]
+            y2 = [x['y'] for x in behavior_json['B_StagePositions']] 
+
+        if len(behavior_json['B_Bias']) == len(behavior_json['B_GoCueTime']):
+            ax[1].plot(behavior_json['B_GoCueTime'],np.array(x)[:-1]-x[0],'r',label='X')
+            ax[1].plot(behavior_json['B_GoCueTime'],np.array(y1)[:-1]-y1[0],'b',label='Y1')
+            ax[1].plot(behavior_json['B_GoCueTime'],np.array(y2)[:-1]-y2[0],'lightblue',label='Y2')
+            ax[1].plot(behavior_json['B_GoCueTime'],np.array(z)[:-1]-z[0],'m',label='Z')
+        else:
+            ax[1].plot(np.array(x)[:-1]-x[0],'r',label='X')
+            ax[1].plot(np.array(y1)[:-1]-y1[0],'b',label='Y1')
+            ax[1].plot(np.array(y2)[:-1]-y2[0],'lightblue',label='Y2')
+            ax[1].plot(np.array(z)[:-1]-z[0],'m',label='Z')
+            ax[1].set_xlim([0, len(behavior_json['B_Bias'])])
+            ax[1].set_xlabel('Trial #')
+
+        ylims = ax[1].get_ylim()
+        ax[1].set_ylim([np.min([-1,ylims[0]]), np.max([1,ylims[1]])])
+        ax[1].legend()           
     plt.savefig(f"{results_folder}/side_bias.png", dpi=300, bbox_inches="tight")
 
 def main():
     # Paths and setup
-    base_path = Path("/data/fiber_raw_data")
-    results_folder = Path("../results")
+    base_path = Path("/data/fiber_raw_data_3")
+    results_folder = Path("../results/aind-dynamic-foraging-qc")
     results_folder.mkdir(parents=True, exist_ok=True)
-    qc_folder = Path("../results/qc-raw")
-    qc_folder.mkdir(parents=True, exist_ok=True)
-
-    ref_folder = Path("qc-raw")
 
     # Load JSON files
     subject_data = load_json_file(base_path / "subject.json")
@@ -147,7 +179,7 @@ def main():
     data_disc_json = load_json_file(base_path / "data_description.json")
     asset_name = data_disc_json.get("name")
     setup_logging(
-        "aind-dynamic-foraging-qc", mouse_id=subject_id, session_name=asset_name
+        "aind-dynamic-foraging-qc", subject_id=subject_id, asset_name=asset_name
     )
 
     session_json = load_json_file(base_path / "session.json")
@@ -155,7 +187,7 @@ def main():
  
     # Load behavior JSON
     # Regex pattern is <subject_id>_YYYY-MM-DD_HH-MM-SS.json
-    pattern = "/data/fiber_raw_data/behavior/[0-9]*_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]-[0-9][0-9]-[0-9][0-9].json"
+    pattern = "/data/fiber_raw_data_3/behavior/[0-9]*_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]-[0-9][0-9]-[0-9][0-9].json"
     matching_behavior_files = glob.glob(pattern)
     if matching_behavior_files:
         behavior_json = load_json_file(matching_behavior_files[0])
@@ -249,27 +281,29 @@ def main():
         evaluations.append(
             create_evaluation(
                 "Side bias",
-                "pass when average bias is less than 0.75",
+                "pass when max bias is less than 1, and average side bias is less than 0.5",
                 [
                     QCMetric(
                         name="average side bias",
+                        description="average side bias should be less than 0.5",
                         value=mean_bias,
                         status_history=[
                             Bool2Status(
-                                np.abs(mean_bias) < 0.75, t=datetime.now(seattle_tz)
+                                np.abs(mean_bias) < 0.5, t=datetime.now(seattle_tz)
                             )
                         ],
-                        reference=str(ref_folder / "side_bias.png")
+                        reference=str(results_folder / "side_bias.png")
                     ),
                     QCMetric(
                         name="Max side bias",
+                        description="max side bias should be less than 1",
                         value=max_bias,
                         status_history=[
                             Bool2Status(
                                 np.abs(max_bias) < 1, t=datetime.now(seattle_tz)
                             )
                         ],
-                        reference=str(ref_folder / "side_bias.png")
+                        reference=str(results_folder / "side_bias.png")
                     ),
                 ],
             )
