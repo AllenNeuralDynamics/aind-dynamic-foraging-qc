@@ -118,6 +118,7 @@ def plot_bias(behavior_json,results_folder):
     fig,ax = plt.subplots(nrows=2,figsize=(6,6))
     
     # Set up side bias plot
+    ax[0].set_xlabel('Trial #')
     ax[0].set_ylabel('Side Bias')
     ax[0].axhline(+0.7,color='r', linestyle='--')
     ax[0].axhline(-0.7,color='r', linestyle='--')
@@ -127,61 +128,51 @@ def plot_bias(behavior_json,results_folder):
         ax[0].spines[side].set_visible(False)
         ax[1].spines[side].set_visible(False)
 
-    if len(behavior_json['B_Bias']) == len(behavior_json['B_GoCueTime']):
-        # Bug in older data had only the 200 most recent bias points saved
-        if ('B_Bias_CI' in behavior_json):
-            # If we have the confidence intervals, plot them
-            lower = [x[0] for x in behavior_json['B_Bias_CI']]
-            upper = [x[1] for x in behavior_json['B_Bias_CI']]
-            ax[0].fill_between(
-                np.array(behavior_json['B_GoCueTime'])-behavior_json['B_GoCueTime'][0],
-                behavior_json['B_Bias'], 
-                lower, 
-                upper, 
-                color='gray', 
-                alpha=.5
-                )
-        ax[0].plot(
-            np.array(behavior_json['B_GoCueTime'])-behavior_json['B_GoCueTime'][0],
-            behavior_json['B_Bias'],
-            'k',
-            linewidth=2
+    # If we have the confidence intervals, plot them
+    if ('B_Bias_CI' in behavior_json):
+        lower = [x[0] for x in behavior_json['B_Bias_CI']]
+        upper = [x[1] for x in behavior_json['B_Bias_CI']]
+        ax[0].fill_between(
+            np.arange(0,len(behavior_json['B_Bias'])),
+            behavior_json['B_Bias'], 
+            lower, 
+            upper, 
+            color='gray', 
+            alpha=.5
             )
-        ax[0].set_xlabel('Time from first go cue(s)')
-        stop = behavior_json['B_GoCueTime'][-1] - behavior_json['B_GoCueTime'][0]
-        ax[0].set_xlim([0,stop])
-    else:
+
+    # Plot the bias trace
+    if 'B_Bias' in behavior_json:
         ax[0].plot(behavior_json['B_Bias'],'k',linewidth=2)
         ax[0].set_xlim([0, len(behavior_json['B_Bias'])])
-        ax[0].set_xlabel('Trial #')
 
     if 'B_StagePositions' in behavior_json:
+        # Extract stage positions
         x = [x['x'] for x in behavior_json['B_StagePositions']]
         z = [x['z'] for x in behavior_json['B_StagePositions']]
         if 'y1' in behavior_json['B_StagePositions'][0]:
             y1 = [x['y1'] for x in behavior_json['B_StagePositions']]
             y2 = [x['y2'] for x in behavior_json['B_StagePositions']]
         else:
+            # Convert Newscale from um to mm
             y1 = [x['y']*1000 for x in behavior_json['B_StagePositions']]
             y2 = [x['y']*1000 for x in behavior_json['B_StagePositions']] 
 
-        if len(behavior_json['B_Bias']) == len(behavior_json['B_GoCueTime']):
-            ax[1].plot(behavior_json['B_GoCueTime'],np.array(x)[:-1]-x[0],'r',label='X')
-            ax[1].plot(behavior_json['B_GoCueTime'],np.array(y1)[:-1]-y1[0],'b',label='Y1')
-            ax[1].plot(behavior_json['B_GoCueTime'],np.array(y2)[:-1]-y2[0],'lightblue',label='Y2')
-            ax[1].plot(behavior_json['B_GoCueTime'],np.array(z)[:-1]-z[0],'m',label='Z')
-        else:
-            ax[1].plot(np.array(x)[:-1]-x[0],'r',label='X')
-            ax[1].plot(np.array(y1)[:-1]-y1[0],'b',label='Y1')
-            ax[1].plot(np.array(y2)[:-1]-y2[0],'lightblue',label='Y2')
-            ax[1].plot(np.array(z)[:-1]-z[0],'m',label='Z')
-            ax[1].set_xlim([0, len(behavior_json['B_Bias'])])
-            ax[1].set_xlabel('Trial #')
-
+        # Plot stage positions
+        ax[1].plot(np.array(x)[:-1]-x[0],'r',label='X')
+        ax[1].plot(np.array(y1)[:-1]-y1[0],'b',label='Y1')
+        ax[1].plot(np.array(y2)[:-1]-y2[0],'lightblue',label='Y2')
+        ax[1].plot(np.array(z)[:-1]-z[0],'m',label='Z')
+    
+        # Clean up plot
+        ax[1].set_xlim([0, len(behavior_json['B_Bias'])])
+        ax[1].set_xlabel('Trial #')
         ylims = ax[1].get_ylim()
         ax[1].set_ylim([np.min([-1,ylims[0]]), np.max([1,ylims[1]])])
         ax[1].set_ylabel('Lickspout Position \n relative to session start (mm)')
-        ax[1].legend()           
+        ax[1].legend()          
+    
+    # Save figure 
     plt.savefig(f"{results_folder}/side_bias.png", dpi=300, bbox_inches="tight")
 
 def main():
