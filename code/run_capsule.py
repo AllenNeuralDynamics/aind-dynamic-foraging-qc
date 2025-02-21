@@ -65,6 +65,7 @@ def calculate_lick_intervals(behavior_json):
     left = behavior_json["B_LeftLickTime"]
     same_side_l = np.diff(left)
     same_side_r = np.diff(right)
+
     threshold = 0.05  # time in ms to consider as a fast interval
 
     if (len(left) == 0) and (len(right) == 0):
