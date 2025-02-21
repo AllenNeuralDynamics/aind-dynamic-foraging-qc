@@ -109,6 +109,74 @@ def calculate_lick_intervals(behavior_json):
         }
         return results
 
+def plot_lick_intervals(behavior_json, results_folder):
+    fig, ax = plt.subplots(5,1,figsize=(6,6),sharex=True,sharey=True)
+
+    ax[0].set_xlim(-0.01, 0.3)
+    ax[0].set_title('left licks')
+    ax[1].set_title('right licks')
+    ax[2].set_title('left to right licks')
+    ax[3].set_title('right to left licks')
+    ax[4].set_title('all licks')
+    ax[4].set_xlabel('time (s)')
+    for a in ax:
+        a.set_ylabel('counts')
+        a.spines['top'].set_visible(False)
+        a.spines['right'].set_visible(False)
+
+    x_values = np.linspace(-0.3, 0.3, 100)
+    LeftLicksIndex=np.zeros_like(behavior_json['B_LeftLickTime'])
+    RightLicksIndex=np.ones_like(behavior_json['B_RightLickTime'])
+    AllLicks=np.concatenate((behavior_json['B_LeftLickTime'],behavior_json['B_RightLickTime']))
+    AllLicksIndex=np.concatenate((LeftLicksIndex,RightLicksIndex))
+    AllLicksSorted=np.sort(AllLicks)
+    AllLicksSortedDiff=np.diff(AllLicksSorted)
+    SortedIndex=np.argsort(AllLicks)
+    AllLicksIndexSorted=AllLicksIndex[SortedIndex]
+    AllLicksIndexSortedDiff=np.diff(AllLicksIndexSorted)
+    LeftToRightLicks=AllLicksSortedDiff[AllLicksIndexSortedDiff==1]
+    RightToLeftLicks=AllLicksSortedDiff[AllLicksIndexSortedDiff==-1]
+
+    ax[0].hist(
+        np.diff(behavior_json['B_LeftLickTime']), 
+        bins=x_values, 
+        color='red', 
+        alpha=0.7,
+        label='left licks'
+        )
+    ax[1].hist(
+        np.diff(behavior_json['B_RightLickTime']), 
+        bins=x_values, 
+        color='blue', 
+        alpha=0.7,
+        label='right licks'
+        )
+    ax[2].hist(
+        LeftToRightLicks, 
+        bins=x_values, 
+        color='black', 
+        alpha=0.7,
+        label='left to right licks'
+        )
+    ax[3].hist(
+        RightToLeftLicks, 
+        bins=x_values, 
+        color='black', 
+        alpha=0.7,
+        label='right to left licks'
+        )
+    ax[4].hist(
+        AllLicksSortedDiff, 
+        bins=x_values, 
+        color='black', 
+        alpha=0.7,
+        label='all licks'
+        )
+
+    plt.tight_layout()
+    plt.savefig(f"{results_folder}/lick_intervals.png", dpi=300, bbox_inches="tight")
+
+
 def plot_bias(behavior_json,results_folder):
     '''
         Plot a figure of the side bias, and lick spout position
@@ -194,7 +262,6 @@ def main():
     )
 
     session_json = load_json_file(base_path / "session.json")
-
  
     # Load behavior JSON
     # Regex pattern is <subject_id>_YYYY-MM-DD_HH-MM-SS.json
@@ -207,6 +274,9 @@ def main():
 
     # Create bias plot
     plot_bias(behavior_json,results_folder)
+
+    # Create lick interval plot
+    plot_lick_intervals(behavior_json, results_folder)
 
     # Create evaluations with our timezone
     seattle_tz = pytz.timezone("America/Los_Angeles")
@@ -340,6 +410,7 @@ def main():
                                 t=datetime.now(seattle_tz),
                             )
                         ],
+                        reference=str(results_folder / "lick_intervals.png")
                     ),
                     QCMetric(
                         name="Right Lick Interval (%)",
@@ -350,6 +421,7 @@ def main():
                                 t=datetime.now(seattle_tz),
                             )
                         ],
+                        reference=str(results_folder / "lick_intervals.png")
                     ),
                     QCMetric(
                         name="Cross Side Lick Interval (%)",
@@ -360,6 +432,7 @@ def main():
                                 t=datetime.now(seattle_tz),
                             )
                         ],
+                        reference=str(results_folder / "lick_intervals.png")
                     ),
                 ],
             )
