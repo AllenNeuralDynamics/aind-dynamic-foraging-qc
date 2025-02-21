@@ -64,6 +64,9 @@ def calculate_lick_intervals(behavior_json):
     right = behavior_json["B_RightLickTime"]
     left = behavior_json["B_LeftLickTime"]
     threshold = 0.05  # time in ms to consider as a fast interval
+    all_licks = np.sort(left +right)
+    all_diffs = np.sort(np.diff(all_licks))
+    ArtifactPercent = np.mean(all_diffs < 0.0005)*100 
     same_side_l = np.diff(left)
     same_side_r = np.diff(right)
     if len(right) > 0:
@@ -107,6 +110,7 @@ def calculate_lick_intervals(behavior_json):
             "RightLickIntervalPercent": RightLickIntervalPercent,
             "SameSideIntervalPercent": SameSideIntervalPercent,
             "CrossSideIntervalPercent": CrossSideIntervalPercent,
+            "ArtifactPercent": ArtifactPercent,
         }
         return results
 
@@ -406,6 +410,7 @@ def main():
                     QCMetric(
                         name="Left Lick Interval (%)",
                         value=intervals["LeftLickIntervalPercent"],
+                        description = "% of lick intervals < 50ms. These indicate grooming bouts",
                         status_history=[
                             Bool2Status(
                                 intervals["LeftLickIntervalPercent"] < 10,
@@ -417,6 +422,7 @@ def main():
                     QCMetric(
                         name="Right Lick Interval (%)",
                         value=intervals["RightLickIntervalPercent"],
+                        description = "% of lick intervals < 50ms. These indicate grooming bouts",
                         status_history=[
                             Bool2Status(
                                 intervals["RightLickIntervalPercent"] < 10,
@@ -428,9 +434,22 @@ def main():
                     QCMetric(
                         name="Cross Side Lick Interval (%)",
                         value=intervals["CrossSideIntervalPercent"],
+                        description = "% of lick intervals < 50ms. These indicate grooming bouts",
                         status_history=[
                             Bool2Status(
                                 intervals["CrossSideIntervalPercent"] < 10,
+                                t=datetime.now(seattle_tz),
+                            )
+                        ],
+                        reference=str(results_folder / "lick_intervals.png")
+                    ),
+                    QCMetric(
+                        name="Artifact Percent (%)",
+                        value=intervals["ArtifactPercent"],
+                        description="% of lick intervals less than 0.5ms. These indicate electical artifacts",
+                        status_history=[
+                            Bool2Status(
+                                intervals["ArtifactPercent"] < 1,
                                 t=datetime.now(seattle_tz),
                             )
                         ],
