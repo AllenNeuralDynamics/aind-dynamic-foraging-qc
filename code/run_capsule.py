@@ -215,15 +215,17 @@ def plot_bias(behavior_json,results_folder):
 
     if 'B_StagePositions' in behavior_json:
         # Extract stage positions
-        x = [x['x'] for x in behavior_json['B_StagePositions']]
-        z = [x['z'] for x in behavior_json['B_StagePositions']]
         if 'y1' in behavior_json['B_StagePositions'][0]:
+            x = [x['x'] for x in behavior_json['B_StagePositions']]
+            z = [x['z'] for x in behavior_json['B_StagePositions']]
             y1 = [x['y1'] for x in behavior_json['B_StagePositions']]
             y2 = [x['y2'] for x in behavior_json['B_StagePositions']]
         else:
             # Convert Newscale from um to mm
-            y1 = [x['y']*1000 for x in behavior_json['B_StagePositions']]
-            y2 = [x['y']*1000 for x in behavior_json['B_StagePositions']] 
+            x = [x['x']/1000 for x in behavior_json['B_StagePositions']]
+            z = [x['z']/1000 for x in behavior_json['B_StagePositions']]
+            y1 = [x['y']/1000 for x in behavior_json['B_StagePositions']]
+            y2 = [x['y']/1000 for x in behavior_json['B_StagePositions']] 
 
         # Plot stage positions
         ax[1].plot(np.array(x)[:-1]-x[0],'r',label='X')
