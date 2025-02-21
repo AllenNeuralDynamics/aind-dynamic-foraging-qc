@@ -110,7 +110,7 @@ def calculate_lick_intervals(behavior_json):
         return results
 
 def plot_lick_intervals(behavior_json, results_folder):
-    fig, ax = plt.subplots(5,1,figsize=(6,6),sharex=True,sharey=True)
+    fig, ax = plt.subplots(1,5,figsize=(8,3),sharex=True,sharey=True)
 
     ax[0].set_xlim(-0.01, 0.3)
     ax[0].set_title('left licks')
@@ -118,9 +118,9 @@ def plot_lick_intervals(behavior_json, results_folder):
     ax[2].set_title('left to right licks')
     ax[3].set_title('right to left licks')
     ax[4].set_title('all licks')
-    ax[4].set_xlabel('time (s)')
+    ax[0].set_ylabel('counts')
     for a in ax:
-        a.set_ylabel('counts')
+        a.set_xlabel('time (s)')
         a.spines['top'].set_visible(False)
         a.spines['right'].set_visible(False)
 
@@ -175,7 +175,6 @@ def plot_lick_intervals(behavior_json, results_folder):
 
     plt.tight_layout()
     plt.savefig(f"{results_folder}/lick_intervals.png", dpi=300, bbox_inches="tight")
-
 
 def plot_bias(behavior_json,results_folder):
     '''
