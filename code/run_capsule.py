@@ -63,7 +63,7 @@ def create_evaluation(
 def calculate_lick_intervals(behavior_json):
     right = behavior_json["B_RightLickTime"]
     left = behavior_json["B_LeftLickTime"]
-    threshold = 0.1  # time in ms to consider as a fast interval
+    threshold = 0.05  # time in ms to consider as a fast interval
     same_side_l = np.diff(left)
     same_side_r = np.diff(right)
     if len(right) > 0:
@@ -77,7 +77,7 @@ def calculate_lick_intervals(behavior_json):
     if len(right) > 0 and len(left) > 0:
         # calculate same side lick interval and fraction for both right and left
         same_side_combined = np.concatenate([same_side_l, same_side_r])
-        same_side_frac = round(np.mean(same_side_combined <= threshold), 4)
+        same_side_frac = round(np.sum(same_side_combined <= threshold)/(len(right)+len(left)), 4)
         # calculate cross side interval and frac
         right_dummy = np.ones(np.shape(right))  # array used to assign lick direction
         left_dummy = np.negative(np.ones(np.shape(left)))
@@ -99,12 +99,13 @@ def calculate_lick_intervals(behavior_json):
                 for i in np.where(diffs != 0)
             ]
         )[0]
-        cross_side_frac = round(np.mean(cross_sides <= threshold), 4)
+        cross_side_frac = round(np.sum(cross_sides <= threshold)/(len(left)+len(right)), 4)
         CrossSideIntervalPercent = cross_side_frac * 100
+        SameSideIntervalPercent = same_side_frac * 100
         results = {
             "LeftLickIntervalPercent": LeftLickIntervalPercent,
             "RightLickIntervalPercent": RightLickIntervalPercent,
-            "SameSideIntervalPercent": same_side_frac * 100,
+            "SameSideIntervalPercent": SameSideIntervalPercent,
             "CrossSideIntervalPercent": CrossSideIntervalPercent,
         }
         return results
