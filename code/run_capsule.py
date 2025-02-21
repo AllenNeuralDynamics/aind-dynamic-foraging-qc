@@ -64,19 +64,26 @@ def calculate_lick_intervals(behavior_json):
     right = behavior_json["B_RightLickTime"]
     left = behavior_json["B_LeftLickTime"]
     threshold = 0.05  # time in ms to consider as a fast interval
-    all_licks = np.sort(left +right)
-    all_diffs = np.sort(np.diff(all_licks))
-    ArtifactPercent = np.mean(all_diffs < 0.0005)*100 
+    if (len(left) == 0) and (len(right) == 0):
+        ArtifactPercent = np.nan
+    else:
+        all_licks = np.sort(left +right)
+        all_diffs = np.sort(np.diff(all_licks))
+        ArtifactPercent = np.mean(all_diffs < 0.0005)*100 
     same_side_l = np.diff(left)
     same_side_r = np.diff(right)
     if len(right) > 0:
         # calculate left interval and fraction
         same_side_l_frac = round(np.mean(same_side_l <= threshold), 4)
         LeftLickIntervalPercent = same_side_l_frac * 100
+    else:
+        LeftLickIntervalPercent = np.nan
     if len(left) > 0:
         # calculate right interval and fraction
         same_side_r_frac = round(np.mean(same_side_r <= threshold), 4)
         RightLickIntervalPercent = same_side_r_frac * 100
+    else:
+        RightLickIntervalPercent = np.nan
     if len(right) > 0 and len(left) > 0:
         # calculate same side lick interval and fraction for both right and left
         same_side_combined = np.concatenate([same_side_l, same_side_r])
@@ -105,14 +112,17 @@ def calculate_lick_intervals(behavior_json):
         cross_side_frac = round(np.sum(cross_sides <= threshold)/(len(left)+len(right)), 4)
         CrossSideIntervalPercent = cross_side_frac * 100
         SameSideIntervalPercent = same_side_frac * 100
-        results = {
-            "LeftLickIntervalPercent": LeftLickIntervalPercent,
-            "RightLickIntervalPercent": RightLickIntervalPercent,
-            "SameSideIntervalPercent": SameSideIntervalPercent,
-            "CrossSideIntervalPercent": CrossSideIntervalPercent,
-            "ArtifactPercent": ArtifactPercent,
-        }
-        return results
+    else:
+        CrossSideIntervalPercent = np.nan
+        SameSideIntervalPercent = np.nan
+    results = {
+        "LeftLickIntervalPercent": LeftLickIntervalPercent,
+        "RightLickIntervalPercent": RightLickIntervalPercent,
+        "SameSideIntervalPercent": SameSideIntervalPercent,
+        "CrossSideIntervalPercent": CrossSideIntervalPercent,
+        "ArtifactPercent": ArtifactPercent,
+    }
+    return results
 
 def plot_lick_intervals(behavior_json, results_folder):
     fig, ax = plt.subplots(1,5,figsize=(8,3),sharex=True,sharey=True)
