@@ -63,27 +63,31 @@ def create_evaluation(
 def calculate_lick_intervals(behavior_json):
     right = behavior_json["B_RightLickTime"]
     left = behavior_json["B_LeftLickTime"]
+    same_side_l = np.diff(left)
+    same_side_r = np.diff(right)
     threshold = 0.05  # time in ms to consider as a fast interval
+
     if (len(left) == 0) and (len(right) == 0):
         ArtifactPercent = np.nan
     else:
         all_licks = np.sort(left +right)
         all_diffs = np.sort(np.diff(all_licks))
-        ArtifactPercent = np.mean(all_diffs < 0.0005)*100 
-    same_side_l = np.diff(left)
-    same_side_r = np.diff(right)
-    if len(right) > 0:
+        ArtifactPercent = np.mean(all_diffs < 0.0005)*100
+ 
+    if len(left) > 0:
         # calculate left interval and fraction
         same_side_l_frac = round(np.mean(same_side_l <= threshold), 4)
         LeftLickIntervalPercent = same_side_l_frac * 100
     else:
         LeftLickIntervalPercent = np.nan
-    if len(left) > 0:
+
+    if len(right) > 0:
         # calculate right interval and fraction
         same_side_r_frac = round(np.mean(same_side_r <= threshold), 4)
         RightLickIntervalPercent = same_side_r_frac * 100
     else:
         RightLickIntervalPercent = np.nan
+
     if len(right) > 0 and len(left) > 0:
         # calculate same side lick interval and fraction for both right and left
         same_side_combined = np.concatenate([same_side_l, same_side_r])
