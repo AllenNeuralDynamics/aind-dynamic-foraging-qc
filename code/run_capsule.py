@@ -294,6 +294,11 @@ def main():
         behavior_json = load_json_file(matching_behavior_files[0])
     else:
         logging.info("NO BEHAVIOR JSON, cannot run QC")
+        qc_file_path = results_folder / "no_behavior_to_qc.txt"
+        # Create an empty file
+        with open(qc_file_path, "w") as file:
+            file.write("No behavior JSON file, cannot run QC")
+        print(f"Empty file created at: {qc_file_path}")
         return
 
     # Create bias plot
@@ -517,8 +522,6 @@ def main():
             ],
         )
     )
-
-    # TODO - move files?
 
     # Create QC object and save
     qc = QualityControl(evaluations=evaluations)
