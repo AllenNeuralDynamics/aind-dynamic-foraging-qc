@@ -144,6 +144,7 @@ def main():
         behavior_json = load_json_file(matching_behavior_files[0])
     else:
         logging.info("NO BEHAVIOR JSON")
+        return
 
     # Create evaluations with our timezone
     seattle_tz = pytz.timezone("America/Los_Angeles")
