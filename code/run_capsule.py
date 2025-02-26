@@ -291,7 +291,8 @@ def main():
     if matching_behavior_files:
         behavior_json = load_json_file(matching_behavior_files[0])
     else:
-        logging.info("NO BEHAVIOR JSON")
+        logging.info("NO BEHAVIOR JSON, cannot run QC")
+        return
 
     # Create bias plot
     plot_bias(behavior_json,results_folder)
