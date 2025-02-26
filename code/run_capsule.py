@@ -269,6 +269,8 @@ def main():
     base_path = Path("/data/fiber_raw_data")
     results_folder = Path("../results/aind-dynamic-foraging-qc")
     results_folder.mkdir(parents=True, exist_ok=True)
+    reference_folder = Path("aind-dynamic-foraging-qc")
+    reference_folder.mkdir(parents=True, exist_ok=True)
 
     # Load JSON files
     subject_data = load_json_file(base_path / "subject.json")
@@ -395,7 +397,7 @@ def main():
                                 np.abs(mean_bias) < 0.5, t=datetime.now(seattle_tz)
                             )
                         ],
-                        reference=str(results_folder / "side_bias.png")
+                        reference=str(reference_folder / "side_bias.png")
                     ),
                     QCMetric(
                         name="Max side bias",
@@ -406,7 +408,7 @@ def main():
                                 np.abs(max_bias) < 1, t=datetime.now(seattle_tz)
                             )
                         ],
-                        reference=str(results_folder / "side_bias.png")
+                        reference=str(reference_folder / "side_bias.png")
                     ),
                 ],
             )
@@ -433,7 +435,7 @@ def main():
                                 t=datetime.now(seattle_tz),
                             )
                         ],
-                        reference=str(results_folder / "lick_intervals.png")
+                        reference=str(reference_folder / "lick_intervals.png")
                     ),
                     QCMetric(
                         name="Right Lick Interval (%)",
@@ -445,7 +447,7 @@ def main():
                                 t=datetime.now(seattle_tz),
                             )
                         ],
-                        reference=str(results_folder / "lick_intervals.png")
+                        reference=str(reference_folder / "lick_intervals.png")
                     ),
                     QCMetric(
                         name="Cross Side Lick Interval (%)",
@@ -457,7 +459,7 @@ def main():
                                 t=datetime.now(seattle_tz),
                             )
                         ],
-                        reference=str(results_folder / "lick_intervals.png")
+                        reference=str(reference_folder / "lick_intervals.png")
                     ),
                     QCMetric(
                         name="Artifact Percent (%)",
@@ -469,7 +471,7 @@ def main():
                                 t=datetime.now(seattle_tz),
                             )
                         ],
-                        reference=str(results_folder / "lick_intervals.png")
+                        reference=str(reference_folder / "lick_intervals.png")
                     ),
                 ],
             )
