@@ -267,9 +267,9 @@ def plot_bias(behavior_json,results_folder):
 def main():
     # Paths and setup
     base_path = Path("/data/fiber_raw_data")
-    results_folder = Path("../results/aind-dynamic-foraging-qc")
+    results_folder = Path("../results/dynamic-foraging-qc")
     results_folder.mkdir(parents=True, exist_ok=True)
-    reference_folder = Path("aind-dynamic-foraging-qc")
+    reference_folder = Path("dynamic-foraging-qc")
     reference_folder.mkdir(parents=True, exist_ok=True)
 
     # Load JSON files
@@ -492,6 +492,8 @@ def main():
     else:
         session_length = timedelta(minutes=0)
 
+    session_length_seconds = session_length.total_seconds()
+
     evaluations.append(
         create_evaluation(
             "Session Length Check",
@@ -511,7 +513,7 @@ def main():
                 QCMetric(
                     name="Length of stimulus epoch",
                     description="Must be at least 10 minutes",
-                    value=session_length,
+                    value=session_length_seconds,
                     status_history=[
                         Bool2Status(
                             session_length > timedelta(minutes=10),
