@@ -485,7 +485,10 @@ def main():
         logging.info("SKIPPING lick interval check")
 
     logging.info("Running session length check")
-    if ('stimulus_epochs' in session_json) and ('stimulus_start_time' in session_json['stimulus_epochs']):
+    if ('stimulus_epochs' in session_json) and\
+        (len(session_json['stimulus_epochs'])>0) and \
+        ('stimulus_start_time' in session_json['stimulus_epochs'][0]):
+
         stimulus_start = session_json['stimulus_epochs'][0]['stimulus_start_time']
         stimulus_end = session_json['stimulus_epochs'][0]['stimulus_end_time']
         session_length = datetime.fromisoformat(stimulus_end) - datetime.fromisoformat(stimulus_start) 
