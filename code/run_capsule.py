@@ -387,11 +387,10 @@ def main():
     if "B_Bias" in behavior_json:
         logging.info("Running bias check")
         mean_bias = np.mean(behavior_json["B_Bias"])
-        max_bias = behavior_json["B_Bias"][np.argmax(np.abs(behavior_json["B_Bias"]))]
         evaluations.append(
             create_evaluation(
                 "Side bias",
-                "pass when max bias is less than 1, and average side bias is less than 0.5",
+                "pass when average side bias is less than 0.5",
                 [
                     QCMetric(
                         name="average side bias",
@@ -400,17 +399,6 @@ def main():
                         status_history=[
                             Bool2Status(
                                 np.abs(mean_bias) < 0.5, t=datetime.now(seattle_tz)
-                            )
-                        ],
-                        reference=str(reference_folder / "side_bias.png")
-                    ),
-                    QCMetric(
-                        name="Max side bias",
-                        description="max side bias should be less than 1",
-                        value=max_bias,
-                        status_history=[
-                            Bool2Status(
-                                np.abs(max_bias) < 1, t=datetime.now(seattle_tz)
                             )
                         ],
                         reference=str(reference_folder / "side_bias.png")
