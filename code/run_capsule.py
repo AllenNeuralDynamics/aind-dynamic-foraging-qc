@@ -395,7 +395,7 @@ def main():
                     QCMetric(
                         name="average side bias",
                         description="average side bias should be less than 0.5",
-                        value=mean_bias,
+                        value=np.round(mean_bias,2),
                         status_history=[
                             Bool2Status(
                                 np.abs(mean_bias) < 0.5, t=datetime.now(seattle_tz)
@@ -420,7 +420,7 @@ def main():
                 [
                     QCMetric(
                         name="Left Lick Interval (%)",
-                        value=intervals["LeftLickIntervalPercent"],
+                        value=np.round(intervals["LeftLickIntervalPercent"],2),
                         description = "% of lick intervals < 50ms. These indicate grooming bouts",
                         status_history=[
                             Bool2Status(
@@ -432,7 +432,7 @@ def main():
                     ),
                     QCMetric(
                         name="Right Lick Interval (%)",
-                        value=intervals["RightLickIntervalPercent"],
+                        value=np.round(intervals["RightLickIntervalPercent"],2),
                         description = "% of lick intervals < 50ms. These indicate grooming bouts",
                         status_history=[
                             Bool2Status(
@@ -444,7 +444,7 @@ def main():
                     ),
                     QCMetric(
                         name="Cross Side Lick Interval (%)",
-                        value=intervals["CrossSideIntervalPercent"],
+                        value=np.round(intervals["CrossSideIntervalPercent"],2),
                         description = "% of lick intervals < 50ms. These indicate grooming bouts",
                         status_history=[
                             Bool2Status(
@@ -456,7 +456,7 @@ def main():
                     ),
                     QCMetric(
                         name="Artifact Percent (%)",
-                        value=intervals["ArtifactPercent"],
+                        value=np.round(intervals["ArtifactPercent"],2),
                         description="% of lick intervals less than 0.5ms. These indicate electical artifacts",
                         status_history=[
                             Bool2Status(
