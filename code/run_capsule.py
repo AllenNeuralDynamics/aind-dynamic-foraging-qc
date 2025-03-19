@@ -220,8 +220,7 @@ def plot_bias(behavior_json,results_folder):
         lower = [x[0] for x in behavior_json['B_Bias_CI']]
         upper = [x[1] for x in behavior_json['B_Bias_CI']]
         ax[0].fill_between(
-            np.arange(0,len(behavior_json['B_Bias'])),
-            behavior_json['B_Bias'], 
+            np.arange(0,len(behavior_json['B_Bias'])), 
             lower, 
             upper, 
             color='gray', 
