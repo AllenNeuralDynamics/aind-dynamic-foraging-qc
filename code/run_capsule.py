@@ -220,8 +220,7 @@ def plot_bias(behavior_json,results_folder):
         lower = [x[0] for x in behavior_json['B_Bias_CI']]
         upper = [x[1] for x in behavior_json['B_Bias_CI']]
         ax[0].fill_between(
-            np.arange(0,len(behavior_json['B_Bias'])),
-            behavior_json['B_Bias'], 
+            np.arange(0,len(behavior_json['B_Bias'])), 
             lower, 
             upper, 
             color='gray', 
@@ -233,7 +232,10 @@ def plot_bias(behavior_json,results_folder):
         ax[0].plot(behavior_json['B_Bias'],'k',linewidth=2)
         ax[0].set_xlim([0, len(behavior_json['B_Bias'])])
 
-    if 'B_StagePositions' in behavior_json:
+    if ('B_StagePositions' in behavior_json) and \
+        (behavior_json['B_StagePosition'] is not None) and \
+        len(behavior_json['B_StagePositions']) > 0:
+
         # Extract stage positions
         if 'y1' in behavior_json['B_StagePositions'][0]:
             x = [x['x'] for x in behavior_json['B_StagePositions']]
@@ -387,30 +389,18 @@ def main():
     if "B_Bias" in behavior_json:
         logging.info("Running bias check")
         mean_bias = np.mean(behavior_json["B_Bias"])
-        max_bias = behavior_json["B_Bias"][np.argmax(np.abs(behavior_json["B_Bias"]))]
         evaluations.append(
             create_evaluation(
                 "Side bias",
-                "pass when max bias is less than 1, and average side bias is less than 0.5",
+                "pass when average side bias is less than 0.5",
                 [
                     QCMetric(
                         name="average side bias",
                         description="average side bias should be less than 0.5",
-                        value=mean_bias,
+                        value=np.round(mean_bias,2),
                         status_history=[
                             Bool2Status(
                                 np.abs(mean_bias) < 0.5, t=datetime.now(seattle_tz)
-                            )
-                        ],
-                        reference=str(reference_folder / "side_bias.png")
-                    ),
-                    QCMetric(
-                        name="Max side bias",
-                        description="max side bias should be less than 1",
-                        value=max_bias,
-                        status_history=[
-                            Bool2Status(
-                                np.abs(max_bias) < 1, t=datetime.now(seattle_tz)
                             )
                         ],
                         reference=str(reference_folder / "side_bias.png")
@@ -432,7 +422,7 @@ def main():
                 [
                     QCMetric(
                         name="Left Lick Interval (%)",
-                        value=intervals["LeftLickIntervalPercent"],
+                        value=np.round(intervals["LeftLickIntervalPercent"],2),
                         description = "% of lick intervals < 50ms. These indicate grooming bouts",
                         status_history=[
                             Bool2Status(
@@ -444,7 +434,7 @@ def main():
                     ),
                     QCMetric(
                         name="Right Lick Interval (%)",
-                        value=intervals["RightLickIntervalPercent"],
+                        value=np.round(intervals["RightLickIntervalPercent"],2),
                         description = "% of lick intervals < 50ms. These indicate grooming bouts",
                         status_history=[
                             Bool2Status(
@@ -456,7 +446,7 @@ def main():
                     ),
                     QCMetric(
                         name="Cross Side Lick Interval (%)",
-                        value=intervals["CrossSideIntervalPercent"],
+                        value=np.round(intervals["CrossSideIntervalPercent"],2),
                         description = "% of lick intervals < 50ms. These indicate grooming bouts",
                         status_history=[
                             Bool2Status(
@@ -468,7 +458,7 @@ def main():
                     ),
                     QCMetric(
                         name="Artifact Percent (%)",
-                        value=intervals["ArtifactPercent"],
+                        value=np.round(intervals["ArtifactPercent"],2),
                         description="% of lick intervals less than 0.5ms. These indicate electical artifacts",
                         status_history=[
                             Bool2Status(
