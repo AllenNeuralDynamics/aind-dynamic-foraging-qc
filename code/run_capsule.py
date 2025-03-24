@@ -218,7 +218,7 @@ def plot_behavior(behavior_json,results_folder):
     # Save figure 
     plt.savefig(f"{results_folder}/side_bias.png", dpi=300, bbox_inches="tight")
 
-def add_bias_plot(ax,behavior_json,results_folder):    
+def add_bias_plot(ax,behavior_json):    
     # Set up side bias plot
     ax.set_xlabel('Trial #')
     ax.set_ylabel('Side Bias')
