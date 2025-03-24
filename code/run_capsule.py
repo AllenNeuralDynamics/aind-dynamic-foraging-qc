@@ -233,7 +233,6 @@ def add_bias_plot(ax, behavior_json):
         upper = [x[1] for x in behavior_json['B_Bias_CI']]
         ax.fill_between(
             np.arange(0,len(behavior_json['B_Bias'])),
-            behavior_json['B_Bias'], 
             lower, 
             upper, 
             color='gray', 
@@ -247,7 +246,10 @@ def add_bias_plot(ax, behavior_json):
 
 
 def add_lickspout_position_plot(ax, behavior_json):
-    if 'B_StagePositions' in behavior_json:
+    if ('B_StagePositions' in behavior_json) and \
+        (behavior_json['B_StagePosition'] is not None) and \
+        len(behavior_json['B_StagePositions']) > 0:
+
         # Extract stage positions
         if 'y1' in behavior_json['B_StagePositions'][0]:
             x = [x['x'] for x in behavior_json['B_StagePositions']]
