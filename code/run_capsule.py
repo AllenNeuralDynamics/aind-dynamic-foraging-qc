@@ -286,7 +286,7 @@ def add_behavior_plot(ax, behavior_json):
         right = np.where(choices==1)[0]
         ignore = np.where(choices==2)[0]
         ax.vlines(
-            left,
+            right,
             .8,
             1,
             alpha=1,
@@ -295,7 +295,7 @@ def add_behavior_plot(ax, behavior_json):
             label='Choice'
         )
         ax.vlines(
-            right,
+            left,
             0,
             .2,
             alpha=1,
@@ -316,7 +316,7 @@ def add_behavior_plot(ax, behavior_json):
         left_rewards = np.where(np.array(behavior_json['B_RewardedHistory'][0]))[0] 
         right_rewards = np.where(np.array(behavior_json['B_RewardedHistory'][1]))[0] 
         ax.vlines(
-            right_rewards,
+            left_rewards,
             -.2,
             0,
             alpha=1,
@@ -325,7 +325,7 @@ def add_behavior_plot(ax, behavior_json):
             label='Earned Water'
         )
         ax.vlines(
-            left_rewards,
+            right_rewards,
             1,
             1.2,
             alpha=1,
@@ -339,8 +339,8 @@ def add_behavior_plot(ax, behavior_json):
         manual_right_trial = time_to_trial_index(go_cues, manual_right_times)
         ax.vlines(
             manual_right_trial,
-            -.4,
-            -.2,
+            1.2,
+            1.4,
             alpha=1,
             linewidth=1,
             color="blue",
@@ -351,8 +351,8 @@ def add_behavior_plot(ax, behavior_json):
         manual_left_trial = time_to_trial_index(go_cues, manual_left_times)
         ax.vlines(
             manual_left_trial,
-            1.2,
-            1.4,
+            -.4,
+            -.2,
             alpha=1,
             linewidth=1,
             color="blue",
@@ -363,7 +363,7 @@ def add_behavior_plot(ax, behavior_json):
         auto_water_left = np.where(np.array(auto_water)[0,:] == 1)[0]
         auto_water_right = np.where(np.array(auto_water)[1,:] == 1)[0]
         ax.vlines(
-            auto_water_left,
+            auto_water_right,
             1.2,
             1.4,
             alpha=1,
@@ -372,7 +372,7 @@ def add_behavior_plot(ax, behavior_json):
             label='Auto Water'
         )
         ax.vlines(
-            auto_water_right,
+            auto_water_left,
             -.4,
             -.2,
             alpha=1,
@@ -382,7 +382,7 @@ def add_behavior_plot(ax, behavior_json):
     ax.set_ylim([-.4,1.4])
     ax.set_xlim([0,len(go_cues)])
     ax.set_xlabel('Trial #')
-    ax.set_yticks([-.3,-.1,0.1,.5,.9,1.1,1.3],labels=['R Auto Water', 'R Reward', 'R Choice','Ignore','L Choice', 'L Reward', 'L Auto Water'])
+    ax.set_yticks([-.3,-.1,0.1,.5,.9,1.1,1.3],labels=['L Auto Water', 'L Reward', 'L Choice','Ignore','R Choice', 'R Reward', 'R Auto Water'])
 
 def time_to_trial_index(go_cues, times):
     trial_index = []
