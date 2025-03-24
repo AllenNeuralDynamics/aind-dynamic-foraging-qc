@@ -196,30 +196,42 @@ def plot_lick_intervals(behavior_json, results_folder):
     plt.tight_layout()
     plt.savefig(f"{results_folder}/lick_intervals.png", dpi=300, bbox_inches="tight")
 
-def plot_bias(behavior_json,results_folder):
+def plot_behavior(behavior_json,results_folder):
     '''
         Plot a figure of the side bias, and lick spout position
         behavior_json, the data saved from the GUI
         results_folder, the place to save the figure
     '''
-    fig,ax = plt.subplots(nrows=2,figsize=(6,6))
+    fig,ax = plt.subplots(nrows=4,figsize=(10,12))
     
-    # Set up side bias plot
-    ax[0].set_xlabel('Trial #')
-    ax[0].set_ylabel('Side Bias')
-    ax[0].axhline(+0.7,color='r', linestyle='--')
-    ax[0].axhline(-0.7,color='r', linestyle='--')
-    ax[0].axhline(0,color='k', linestyle='--')
-    ax[0].set_ylim([-1,+1]) 
     for side in ['top', 'right']:
         ax[0].spines[side].set_visible(False)
         ax[1].spines[side].set_visible(False)
+        ax[2].spines[side].set_visible(False)
+        ax[3].spines[side].set_visible(False)
+
+    add_bias_plot(ax[0], behavior_json)
+    add_lickspout_position_plot(ax[1], behavior_json) 
+    add_behavior_plot(ax[2],behavior_json)
+    add_reward_probabilities(ax[3], behavior_json)   
+
+    # Save figure 
+    plt.savefig(f"{results_folder}/side_bias.png", dpi=300, bbox_inches="tight")
+
+def add_bias_plot(ax,behavior_json,results_folder):    
+    # Set up side bias plot
+    ax.set_xlabel('Trial #')
+    ax.set_ylabel('Side Bias')
+    ax.axhline(+0.7,color='r', linestyle='--')
+    ax.axhline(-0.7,color='r', linestyle='--')
+    ax.axhline(0,color='k', linestyle='--')
+    ax.set_ylim([-1,+1]) 
 
     # If we have the confidence intervals, plot them
     if ('B_Bias_CI' in behavior_json):
         lower = [x[0] for x in behavior_json['B_Bias_CI']]
         upper = [x[1] for x in behavior_json['B_Bias_CI']]
-        ax[0].fill_between(
+        ax.fill_between(
             np.arange(0,len(behavior_json['B_Bias'])), 
             lower, 
             upper, 
@@ -229,8 +241,10 @@ def plot_bias(behavior_json,results_folder):
 
     # Plot the bias trace
     if 'B_Bias' in behavior_json:
-        ax[0].plot(behavior_json['B_Bias'],'k',linewidth=2)
-        ax[0].set_xlim([0, len(behavior_json['B_Bias'])])
+        ax.plot(behavior_json['B_Bias'],'k',linewidth=2)
+        ax.set_xlim([0, len(behavior_json['B_Bias'])])
+
+def add_lickspout_position_plot(ax, behavior_json):
 
     if ('B_StagePositions' in behavior_json) and \
         (behavior_json['B_StagePosition'] is not None) and \
@@ -250,21 +264,145 @@ def plot_bias(behavior_json,results_folder):
             y2 = [x['y']/1000 for x in behavior_json['B_StagePositions']] 
 
         # Plot stage positions
-        ax[1].plot(np.array(x)[:-1]-x[0],'r',label='X')
-        ax[1].plot(np.array(y1)[:-1]-y1[0],'b',label='Y1')
-        ax[1].plot(np.array(y2)[:-1]-y2[0],'lightblue',label='Y2')
-        ax[1].plot(np.array(z)[:-1]-z[0],'m',label='Z')
+        ax.plot(np.array(x)[:-1]-x[0],'r',label='X')
+        ax.plot(np.array(y1)[:-1]-y1[0],'b',label='Y1')
+        ax.plot(np.array(y2)[:-1]-y2[0],'lightblue',label='Y2')
+        ax.plot(np.array(z)[:-1]-z[0],'m',label='Z')
     
         # Clean up plot
-        ax[1].set_xlim([0, len(behavior_json['B_Bias'])])
-        ax[1].set_xlabel('Trial #')
-        ylims = ax[1].get_ylim()
-        ax[1].set_ylim([np.min([-1,ylims[0]]), np.max([1,ylims[1]])])
-        ax[1].set_ylabel('Lickspout Position \n relative to session start (mm)')
-        ax[1].legend()          
+        ax.set_xlim([0, len(behavior_json['B_Bias'])])
+        ax.set_xlabel('Trial #')
+        ylims = ax.get_ylim()
+        ax.set_ylim([np.min([-1,ylims[0]]), np.max([1,ylims[1]])])
+        ax.set_ylabel('Lickspout Position \n relative to session start (mm)')
+        ax.legend()          
+
+def add_behavior_plot(ax, behavior_json):
+    go_cues = behavior_json['B_GoCueTimeSoundCard']
     
-    # Save figure 
-    plt.savefig(f"{results_folder}/side_bias.png", dpi=300, bbox_inches="tight")
+    if 'B_AnimalResponseHistory' in behavior_json:
+        choices = np.array(behavior_json['B_AnimalResponseHistory'])
+        left = np.where(choices == 0)[0]
+        right = np.where(choices==1)[0]
+        ignore = np.where(choices==2)[0]
+        ax.vlines(
+            left,
+            .8,
+            1,
+            alpha=1,
+            linewidth=1,
+            color="black",
+            label='Choice'
+        )
+        ax.vlines(
+            right,
+            0,
+            .2,
+            alpha=1,
+            linewidth=1,
+            color="black"
+        )
+        ax.vlines(
+            ignore,
+            .4,
+            .6,
+            alpha=1,
+            linewidth=1,
+            color="lightgray",
+            label='ignore'
+        )
+  
+    if 'B_RewardedHistory' in behavior_json:
+        left_rewards = np.where(np.array(behavior_json['B_RewardedHistory'][0]))[0] 
+        right_rewards = np.where(np.array(behavior_json['B_RewardedHistory'][1]))[0] 
+        ax.vlines(
+            right_rewards,
+            -.2,
+            0,
+            alpha=1,
+            linewidth=1,
+            color="blueviolet",
+            label='Earned Water'
+        )
+        ax.vlines(
+            left_rewards,
+            1,
+            1.2,
+            alpha=1,
+            linewidth=1,
+            color="blueviolet",
+            label='Earned Water'
+        )
+ 
+    if 'B_ManualRightWaterStartTime' in behavior_json:
+        manual_right_times = behavior_json['B_ManualRightWaterStartTime']
+        manual_right_trial = time_to_trial_index(go_cues, manual_right_times)
+        ax.vlines(
+            manual_right_trial,
+            -.4,
+            -.2,
+            alpha=1,
+            linewidth=1,
+            color="blue",
+            label='Manual Water'
+        )
+    if 'B_ManualLeftWaterStartTime' in behavior_json:
+        manual_left_times = behavior_json['B_ManualLeftWaterStartTime']
+        manual_left_trial = time_to_trial_index(go_cues, manual_left_times)
+        ax.vlines(
+            manual_left_trial,
+            1.2,
+            1.4,
+            alpha=1,
+            linewidth=1,
+            color="blue",
+        )
+
+    if 'B_AutoWaterTrial' in behavior_json:
+        auto_water = np.array(behavior_json['B_AutoWaterTrial'])
+        auto_water_left = np.where(np.array(auto_water)[0,:] == 1)[0]
+        auto_water_right = np.where(np.array(auto_water)[1,:] == 1)[0]
+        ax.vlines(
+            auto_water_left,
+            1.2,
+            1.4,
+            alpha=1,
+            linewidth=1,
+            color="cyan",
+            label='Auto Water'
+        )
+        ax.vlines(
+            auto_water_right,
+            -.4,
+            -.2,
+            alpha=1,
+            linewidth=1,
+            color="cyan",
+        )
+    ax.legend()
+    ax.set_ylim([-.4,1.4])
+    ax.set_xlim([0,len(go_cues)])
+    ax.set_xlabel('Trial #')
+    ax.set_yticks([0,.5,1],labels=['Right','Ignore','Left'])
+
+def time_to_trial_index(go_cues, times):
+    trial_index = []
+    for t in times:
+        if t < go_cues[0]:
+            trial_index.append(-1)
+        else:
+            trial_index.append(np.where(np.array(go_cues) < t)[0][-1])
+    return trial_index
+
+def add_reward_probabilities(ax, behavior_json):
+    reward_probabilityL=behavior_json['B_RewardProHistory'][0][:-1]
+    reward_probabilityR=behavior_json['B_RewardProHistory'][1][:-1]
+    ax.plot(reward_probabilityL,'b',label='Prob. L')
+    ax.plot(reward_probabilityR,'r',label='Prob. R')
+    ax.set_ylim([0,1])
+    ax.set_xlim([0,len(reward_probabilityL)])
+    ax.set_xlabel('Trial #')
+    ax.legend()
 
 def main():
     # Paths and setup
@@ -304,7 +442,7 @@ def main():
         return
 
     # Create bias plot
-    plot_bias(behavior_json,results_folder)
+    plot_behavior(behavior_json,results_folder)
 
     # Create lick interval plot
     plot_lick_intervals(behavior_json, results_folder)
