@@ -379,11 +379,10 @@ def add_behavior_plot(ax, behavior_json):
             linewidth=1,
             color="cyan",
         )
-    ax.legend()
     ax.set_ylim([-.4,1.4])
     ax.set_xlim([0,len(go_cues)])
     ax.set_xlabel('Trial #')
-    ax.set_yticks([0,.5,1],labels=['Right','Ignore','Left'])
+    ax.set_yticks([-.3,-.1,0.1,.5,.9,1.1,1.3],labels=['R Auto Water', 'R Reward', 'R Choice','Ignore','L Choice', 'L Reward', 'L Auto Water'])
 
 def time_to_trial_index(go_cues, times):
     trial_index = []
