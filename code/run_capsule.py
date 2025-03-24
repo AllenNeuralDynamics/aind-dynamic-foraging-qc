@@ -247,7 +247,7 @@ def add_bias_plot(ax,behavior_json):
 def add_lickspout_position_plot(ax, behavior_json):
 
     if ('B_StagePositions' in behavior_json) and \
-        (behavior_json['B_StagePosition'] is not None) and \
+        (behavior_json['B_StagePositions'] is not None) and \
         len(behavior_json['B_StagePositions']) > 0:
 
         # Extract stage positions
