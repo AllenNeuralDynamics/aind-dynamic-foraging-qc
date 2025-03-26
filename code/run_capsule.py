@@ -248,20 +248,21 @@ def add_lickspout_position_plot(ax, behavior_json):
 
     if ('B_StagePositions' in behavior_json) and \
         (behavior_json['B_StagePositions'] is not None) and \
-        len(behavior_json['B_StagePositions']) > 0:
+        len(behavior_json['B_StagePositions']) > 0 and \
+        behavior_json['B_StagePositions'][0] is not None:
 
         # Extract stage positions
         if 'y1' in behavior_json['B_StagePositions'][0]:
-            x = [x['x'] for x in behavior_json['B_StagePositions']]
-            z = [x['z'] for x in behavior_json['B_StagePositions']]
-            y1 = [x['y1'] for x in behavior_json['B_StagePositions']]
-            y2 = [x['y2'] for x in behavior_json['B_StagePositions']]
+            x = [x['x'] if x is not None else np.nan for x in behavior_json['B_StagePositions']]
+            z = [x['z'] if x is not None else np.nan for x in behavior_json['B_StagePositions']]
+            y1 = [x['y1'] if x is not None else np.nan for x in behavior_json['B_StagePositions']]
+            y2 = [x['y2'] if x is not None else np.nan for x in behavior_json['B_StagePositions']]
         else:
             # Convert Newscale from um to mm
-            x = [x['x']/1000 for x in behavior_json['B_StagePositions']]
-            z = [x['z']/1000 for x in behavior_json['B_StagePositions']]
-            y1 = [x['y']/1000 for x in behavior_json['B_StagePositions']]
-            y2 = [x['y']/1000 for x in behavior_json['B_StagePositions']] 
+            x = [x['x']/1000 if x is not None else np.nan for x in behavior_json['B_StagePositions']]
+            z = [x['z']/1000 if x is not None else np.nan for x in behavior_json['B_StagePositions']]
+            y1 = [x['y']/1000 if x is not None else np.nan for x in behavior_json['B_StagePositions']]
+            y2 = [x['y']/1000 if x is not None else np.nan for x in behavior_json['B_StagePositions']] 
 
         # Plot stage positions
         ax.plot(np.array(x)[:-1]-x[0],'r',label='X')
