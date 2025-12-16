@@ -319,10 +319,10 @@ def add_behavior_plot(ax, behavior_json):
         left = np.where(choices == 0)[0]
         right = np.where(choices == 1)[0]
         ignore = np.where(choices == 2)[0]
-        ax.vlines(right, 0.8, 1, alpha=1, linewidth=1, color="black", label="Choice")
-        ax.vlines(left, 0, 0.2, alpha=1, linewidth=1, color="black")
+        ax.vlines(right, 0.8, 1, alpha=1, linewidth=1, color="gray", label="Choice")
+        ax.vlines(left, 0, 0.2, alpha=1, linewidth=1, color="gray")
         ax.vlines(
-            ignore, 0.4, 0.6, alpha=1, linewidth=1, color="lightgray", label="ignore"
+            ignore, 0.4, 0.6, alpha=1, linewidth=1, color="darkviolet", label="ignore"
         )
 
     if "B_RewardedHistory" in behavior_json:
@@ -334,7 +334,7 @@ def add_behavior_plot(ax, behavior_json):
             0,
             alpha=1,
             linewidth=1,
-            color="blueviolet",
+            color="black",
             label="Earned Water",
         )
         ax.vlines(
@@ -343,7 +343,7 @@ def add_behavior_plot(ax, behavior_json):
             1.2,
             alpha=1,
             linewidth=1,
-            color="blueviolet",
+            color="black",
             label="Earned Water",
         )
 
