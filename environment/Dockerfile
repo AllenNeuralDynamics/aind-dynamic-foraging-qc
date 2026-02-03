@@ -10,8 +10,8 @@ COPY git-askpass /
 
 RUN pip install -U --no-cache-dir \
     aind-data-access-api[docdb]==0.17.1 \
-    aind-data-schema==1.3.0 \
-    aind-data-schema-models==0.7.5 \
+    aind-data-schema==2.4.0 \
+    aind-data-schema-models==5.2.3 \
     aind-log-utils==0.2.4 \
     aws-requests-auth==0.4.3 \
     boto3==1.36.2 \

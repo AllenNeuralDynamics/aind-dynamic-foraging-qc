@@ -10,7 +10,6 @@ import pytz
 import matplotlib.pyplot as plt
 from aind_log_utils.log import setup_logging
 from aind_data_schema.core.quality_control import (
-    QCEvaluation,
     QCMetric,
     QCStatus,
     Stage,
@@ -41,23 +40,7 @@ def load_json_file(file_path):
         logging.error(f"Error: {file_path} not found.")
 
 
-def create_evaluation(
-    name,
-    description,
-    metrics,
-    modality=Modality.BEHAVIOR,
-    stage=Stage.RAW,
-    allow_failed=False,
-):
-    """Create a QC evaluation object."""
-    return QCEvaluation(
-        name=name,
-        modality=modality,
-        stage=stage,
-        metrics=metrics,
-        allow_failed_metrics=allow_failed,
-        description=description,
-    )
+
 
 
 def calculate_lick_intervals(behavior_json):
@@ -447,76 +430,79 @@ def main():
     # Create lick interval plot
     plot_lick_intervals(behavior_json, results_folder)
 
-    # Create evaluations with our timezone
+    # Create metrics list with our timezone
     seattle_tz = pytz.timezone("America/Los_Angeles")
-    evaluations = []
+    metrics = []
 
     if "drop_frames_tag" in behavior_json:
         logging.info("Running dropped frames check")
-        camera_metrics = []
         # If we have dropped frames, then cameras will be listed here with their recorded frames
         # iterate through each camera and report the number of dropped frames
         frame_metric = QCMetric(
             name="dropped frames",
             value=behavior_json["drop_frames_tag"],
+            description="Number of dropped frames across all cameras. Pass if 0.",
             status_history=[
                 Bool2Status(
                     behavior_json["drop_frames_tag"] == 0, t=datetime.now(seattle_tz),
                 )
             ],
+            modality=Modality.BEHAVIOR_VIDEOS,
+            stage=Stage.RAW,
+            tags={"category": "Video Quality"},
         )
+        metrics.append(frame_metric)
+        
         for camera in behavior_json["frame_num"]:
             diff = behavior_json["trigger_length"] - behavior_json["frame_num"][camera]
             logging.info("Running dropped frames check for camera {}".format(camera))
-            camera_metrics.append(
+            metrics.append(
                 QCMetric(
                     name="dropped frames for camera {}".format(camera),
                     value=diff,
+                    description="Difference between triggered frames and recorded frames. Pass if 0.",
                     status_history=[Bool2Status(diff == 0, t=datetime.now(seattle_tz))],
+                    modality=Modality.BEHAVIOR_VIDEOS,
+                    stage=Stage.RAW,
+                    tags={"category": "Video Quality"},
                 )
             )
-        evaluations.append(
-            create_evaluation(
-                "dropped frames check",
-                "pass when there are no dropped frames",
-                [frame_metric, *camera_metrics],
-                modality=Modality.BEHAVIOR_VIDEOS,
-            )
-        )
     else:
         logging.info("SKIPPING dropped frames check, no drop_frames_tag")
 
     if ("Experimenter" in behavior_json) and ("dirty_files" in behavior_json):
         logging.info("Running check for basic configuration")
-        evaluations.append(
-            create_evaluation(
-                "Basic Configuration",
-                "pass when researcher name is not default name, and code repo is clean",
-                [
-                    QCMetric(
-                        name="researcher name",
-                        value=behavior_json["Experimenter"],
-                        description='Experimenter name should not be set to the default value of "the ghost in the shell"',
-                        status_history=[
-                            Bool2Status(
-                                behavior_json["Experimenter"]
-                                != "the ghost in the shell",
-                                t=datetime.now(seattle_tz),
-                            )
-                        ],
-                    ),
-                    QCMetric(
-                        name="untracked local changes",
-                        description='Whether the code base had untracked changes, and if so, which files',
-                        value=behavior_json["dirty_files"],
-                        status_history=[
-                            Bool2Status(
-                                not behavior_json["repo_dirty_flag"],
-                                t=datetime.now(seattle_tz),
-                            )
-                        ],
+        metrics.append(
+            QCMetric(
+                name="researcher name",
+                value=behavior_json["Experimenter"],
+                description='Experimenter name should not be set to the default value of "the ghost in the shell". Pass if not default.',
+                status_history=[
+                    Bool2Status(
+                        behavior_json["Experimenter"]
+                        != "the ghost in the shell",
+                        t=datetime.now(seattle_tz),
                     )
                 ],
+                modality=Modality.BEHAVIOR,
+                stage=Stage.RAW,
+                tags={"category": "Configuration"},
+            )
+        )
+        metrics.append(
+            QCMetric(
+                name="untracked local changes",
+                description='Whether the code base had untracked changes, and if so, which files. Pass if no untracked changes.',
+                value=behavior_json["dirty_files"],
+                status_history=[
+                    Bool2Status(
+                        not behavior_json["repo_dirty_flag"],
+                        t=datetime.now(seattle_tz),
+                    )
+                ],
+                modality=Modality.BEHAVIOR,
+                stage=Stage.RAW,
+                tags={"category": "Configuration"},
             )
         )
     else:
@@ -527,86 +513,95 @@ def main():
     if "B_Bias" in behavior_json:
         logging.info("Running bias check")
         mean_bias = np.mean(behavior_json["B_Bias"])
-        evaluations.append(
-            create_evaluation(
-                "Side bias",
-                "pass when average side bias is less than 0.5",
-                [
-                    QCMetric(
-                        name="average side bias",
-                        description="average side bias should be less than 0.5",
-                        value=np.round(mean_bias,2),
-                        status_history=[
-                            Bool2Status(
-                                np.abs(mean_bias) < 0.5, t=datetime.now(seattle_tz)
-                            )
-                        ],
-                        reference=str(reference_folder / "side_bias.png")
-                    ),
+        metrics.append(
+            QCMetric(
+                name="average side bias",
+                description="Average side bias across session. Pass if absolute value < 0.5.",
+                value=np.round(mean_bias,2),
+                status_history=[
+                    Bool2Status(
+                        np.abs(mean_bias) < 0.5, t=datetime.now(seattle_tz)
+                    )
                 ],
+                reference=str(reference_folder / "side_bias.png"),
+                modality=Modality.BEHAVIOR,
+                stage=Stage.RAW,
+                tags={"category": "Side Bias"},
             )
         )
     else:
         logging.info("SKIPPING bias check, no B_Bias")
 
-    # Check side bias
+    # Check lick intervals
     if ("B_LeftLickTime" in behavior_json) and ("B_RightLickTime" in behavior_json):
         logging.info("Running lick interval check")
         intervals = calculate_lick_intervals(behavior_json)
-        evaluations.append(
-            create_evaluation(
-                "Lick Intervals",
-                "pass when lick intervals <100ms are less than 10 percent of licks",
-                [
-                    QCMetric(
-                        name="Left Lick Interval (%)",
-                        value=np.round(intervals["LeftLickIntervalPercent"],2),
-                        description = "% of lick intervals < 50ms. These indicate grooming bouts",
-                        status_history=[
-                            Bool2Status(
-                                intervals["LeftLickIntervalPercent"] < 10,
-                                t=datetime.now(seattle_tz),
-                            )
-                        ],
-                        reference=str(reference_folder / "lick_intervals.png")
-                    ),
-                    QCMetric(
-                        name="Right Lick Interval (%)",
-                        value=np.round(intervals["RightLickIntervalPercent"],2),
-                        description = "% of lick intervals < 50ms. These indicate grooming bouts",
-                        status_history=[
-                            Bool2Status(
-                                intervals["RightLickIntervalPercent"] < 10,
-                                t=datetime.now(seattle_tz),
-                            )
-                        ],
-                        reference=str(reference_folder / "lick_intervals.png")
-                    ),
-                    QCMetric(
-                        name="Cross Side Lick Interval (%)",
-                        value=np.round(intervals["CrossSideIntervalPercent"],2),
-                        description = "% of lick intervals < 50ms. These indicate grooming bouts",
-                        status_history=[
-                            Bool2Status(
-                                intervals["CrossSideIntervalPercent"] < 10,
-                                t=datetime.now(seattle_tz),
-                            )
-                        ],
-                        reference=str(reference_folder / "lick_intervals.png")
-                    ),
-                    QCMetric(
-                        name="Artifact Percent (%)",
-                        value=np.round(intervals["ArtifactPercent"],2),
-                        description="% of lick intervals less than 0.5ms. These indicate electical artifacts",
-                        status_history=[
-                            Bool2Status(
-                                intervals["ArtifactPercent"] < 1,
-                                t=datetime.now(seattle_tz),
-                            )
-                        ],
-                        reference=str(reference_folder / "lick_intervals.png")
-                    ),
+        metrics.append(
+            QCMetric(
+                name="Left Lick Interval (%)",
+                value=np.round(intervals["LeftLickIntervalPercent"],2),
+                description = "% of lick intervals < 50ms. These indicate grooming bouts. Pass if < 10%.",
+                status_history=[
+                    Bool2Status(
+                        intervals["LeftLickIntervalPercent"] < 10,
+                        t=datetime.now(seattle_tz),
+                    )
                 ],
+                reference=str(reference_folder / "lick_intervals.png"),
+                modality=Modality.BEHAVIOR,
+                stage=Stage.RAW,
+                tags={"category": "Lick Intervals"},
+            )
+        )
+        metrics.append(
+            QCMetric(
+                name="Right Lick Interval (%)",
+                value=np.round(intervals["RightLickIntervalPercent"],2),
+                description = "% of lick intervals < 50ms. These indicate grooming bouts. Pass if < 10%.",
+                status_history=[
+                    Bool2Status(
+                        intervals["RightLickIntervalPercent"] < 10,
+                        t=datetime.now(seattle_tz),
+                    )
+                ],
+                reference=str(reference_folder / "lick_intervals.png"),
+                modality=Modality.BEHAVIOR,
+                stage=Stage.RAW,
+                tags={"category": "Lick Intervals"},
+            )
+        )
+        metrics.append(
+            QCMetric(
+                name="Cross Side Lick Interval (%)",
+                value=np.round(intervals["CrossSideIntervalPercent"],2),
+                description = "% of lick intervals < 50ms. These indicate grooming bouts. Pass if < 10%.",
+                status_history=[
+                    Bool2Status(
+                        intervals["CrossSideIntervalPercent"] < 10,
+                        t=datetime.now(seattle_tz),
+                    )
+                ],
+                reference=str(reference_folder / "lick_intervals.png"),
+                modality=Modality.BEHAVIOR,
+                stage=Stage.RAW,
+                tags={"category": "Lick Intervals"},
+            )
+        )
+        metrics.append(
+            QCMetric(
+                name="Artifact Percent (%)",
+                value=np.round(intervals["ArtifactPercent"],2),
+                description="% of lick intervals less than 0.5ms. These indicate electrical artifacts. Pass if < 1%.",
+                status_history=[
+                    Bool2Status(
+                        intervals["ArtifactPercent"] < 1,
+                        t=datetime.now(seattle_tz),
+                    )
+                ],
+                reference=str(reference_folder / "lick_intervals.png"),
+                modality=Modality.BEHAVIOR,
+                stage=Stage.RAW,
+                tags={"category": "Lick Intervals"},
             )
         )
     else:
@@ -625,39 +620,41 @@ def main():
 
     session_length_seconds = session_length.total_seconds()
 
-    evaluations.append(
-        create_evaluation(
-            "Session Length Check",
-            "pass when at least 50 trials were performed, and stimulus epoch was at least 10 minutes",
-            [
-                QCMetric(
-                    name="Number of completed trials",
-                    description='Must complete at least 50 trials to pass',
-                    value=behavior_json.get("BS_FinisheTrialN", 0),
-                    status_history=[
-                        Bool2Status(
-                            behavior_json.get("BS_FinisheTrialN", 0) > 50,
-                            t=datetime.now(seattle_tz),
-                        )
-                    ],
-                ),
-                QCMetric(
-                    name="Length of stimulus epoch",
-                    description="Must be at least 10 minutes",
-                    value=session_length_seconds,
-                    status_history=[
-                        Bool2Status(
-                            session_length > timedelta(minutes=10),
-                            t=datetime.now(seattle_tz),
-                        )
-                    ],
+    metrics.append(
+        QCMetric(
+            name="Number of completed trials",
+            description='Number of finished trials in session. Pass if > 50.',
+            value=behavior_json.get("BS_FinisheTrialN", 0),
+            status_history=[
+                Bool2Status(
+                    behavior_json.get("BS_FinisheTrialN", 0) > 50,
+                    t=datetime.now(seattle_tz),
                 )
             ],
+            modality=Modality.BEHAVIOR,
+            stage=Stage.RAW,
+            tags={"category": "Session Length"},
+        )
+    )
+    metrics.append(
+        QCMetric(
+            name="Length of stimulus epoch",
+            description="Duration of stimulus epoch in seconds. Pass if ≥ 10 minutes (600s).",
+            value=session_length_seconds,
+            status_history=[
+                Bool2Status(
+                    session_length > timedelta(minutes=10),
+                    t=datetime.now(seattle_tz),
+                )
+            ],
+            modality=Modality.BEHAVIOR,
+            stage=Stage.RAW,
+            tags={"category": "Session Length"},
         )
     )
 
     # Create QC object and save
-    qc = QualityControl(evaluations=evaluations)
+    qc = QualityControl(metrics=metrics, default_grouping=["category"])
     qc.write_standard_file(output_directory=str(results_folder))
 
 
