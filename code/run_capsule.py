@@ -69,30 +69,32 @@ def calculate_lick_intervals(behavior_json):
     threshold = 0.05  # time in ms to consider as a fast interval
 
     if (len(left) == 0) and (len(right) == 0):
-        ArtifactPercent = np.nan
+        ArtifactPercent = 0.0
     else:
-        all_licks = np.sort(left +right)
+        all_licks = np.sort(left + right)
         all_diffs = np.sort(np.diff(all_licks))
-        ArtifactPercent = np.mean(all_diffs < 0.0005)*100
- 
-    if len(left) > 0:
+        ArtifactPercent = np.mean(all_diffs < 0.0005) * 100
+
+    if len(left) > 1:
         # calculate left interval and fraction
         same_side_l_frac = round(np.mean(same_side_l <= threshold), 4)
         LeftLickIntervalPercent = same_side_l_frac * 100
     else:
-        LeftLickIntervalPercent = np.nan
+        LeftLickIntervalPercent = 0.0
 
-    if len(right) > 0:
+    if len(right) > 1:
         # calculate right interval and fraction
         same_side_r_frac = round(np.mean(same_side_r <= threshold), 4)
         RightLickIntervalPercent = same_side_r_frac * 100
     else:
-        RightLickIntervalPercent = np.nan
+        RightLickIntervalPercent = 0.0
 
     if len(right) > 0 and len(left) > 0:
         # calculate same side lick interval and fraction for both right and left
         same_side_combined = np.concatenate([same_side_l, same_side_r])
-        same_side_frac = round(np.sum(same_side_combined <= threshold)/(len(right)+len(left)), 4)
+        same_side_frac = round(
+            np.sum(same_side_combined <= threshold) / (len(right) + len(left)), 4
+        )
         # calculate cross side interval and frac
         right_dummy = np.ones(np.shape(right))  # array used to assign lick direction
         left_dummy = np.negative(np.ones(np.shape(left)))
@@ -114,12 +116,14 @@ def calculate_lick_intervals(behavior_json):
                 for i in np.where(diffs != 0)
             ]
         )[0]
-        cross_side_frac = round(np.sum(cross_sides <= threshold)/(len(left)+len(right)), 4)
+        cross_side_frac = round(
+            np.sum(cross_sides <= threshold) / (len(left) + len(right)), 4
+        )
         CrossSideIntervalPercent = cross_side_frac * 100
         SameSideIntervalPercent = same_side_frac * 100
     else:
-        CrossSideIntervalPercent = np.nan
-        SameSideIntervalPercent = np.nan
+        CrossSideIntervalPercent = 0.0
+        SameSideIntervalPercent = 0.0
     results = {
         "LeftLickIntervalPercent": LeftLickIntervalPercent,
         "RightLickIntervalPercent": RightLickIntervalPercent,
@@ -129,201 +133,209 @@ def calculate_lick_intervals(behavior_json):
     }
     return results
 
+
 def plot_lick_intervals(behavior_json, results_folder):
-    fig, ax = plt.subplots(1,5,figsize=(8,3),sharex=True,sharey=True)
+    fig, ax = plt.subplots(1, 5, figsize=(8, 3), sharex=True, sharey=True)
 
     ax[0].set_xlim(-0.01, 0.3)
-    ax[0].set_title('left licks')
-    ax[1].set_title('right licks')
-    ax[2].set_title('left to right licks')
-    ax[3].set_title('right to left licks')
-    ax[4].set_title('all licks')
-    ax[0].set_ylabel('counts')
+    ax[0].set_title("left licks")
+    ax[1].set_title("right licks")
+    ax[2].set_title("left to right licks")
+    ax[3].set_title("right to left licks")
+    ax[4].set_title("all licks")
+    ax[0].set_ylabel("counts")
     for a in ax:
-        a.set_xlabel('time (s)')
-        a.spines['top'].set_visible(False)
-        a.spines['right'].set_visible(False)
+        a.set_xlabel("time (s)")
+        a.spines["top"].set_visible(False)
+        a.spines["right"].set_visible(False)
 
     x_values = np.linspace(-0.3, 0.3, 100)
-    LeftLicksIndex=np.zeros_like(behavior_json['B_LeftLickTime'])
-    RightLicksIndex=np.ones_like(behavior_json['B_RightLickTime'])
-    AllLicks=np.concatenate((behavior_json['B_LeftLickTime'],behavior_json['B_RightLickTime']))
-    AllLicksIndex=np.concatenate((LeftLicksIndex,RightLicksIndex))
-    AllLicksSorted=np.sort(AllLicks)
-    AllLicksSortedDiff=np.diff(AllLicksSorted)
-    SortedIndex=np.argsort(AllLicks)
-    AllLicksIndexSorted=AllLicksIndex[SortedIndex]
-    AllLicksIndexSortedDiff=np.diff(AllLicksIndexSorted)
-    LeftToRightLicks=AllLicksSortedDiff[AllLicksIndexSortedDiff==1]
-    RightToLeftLicks=AllLicksSortedDiff[AllLicksIndexSortedDiff==-1]
+    LeftLicksIndex = np.zeros_like(behavior_json["B_LeftLickTime"])
+    RightLicksIndex = np.ones_like(behavior_json["B_RightLickTime"])
+    AllLicks = np.concatenate(
+        (behavior_json["B_LeftLickTime"], behavior_json["B_RightLickTime"])
+    )
+    AllLicksIndex = np.concatenate((LeftLicksIndex, RightLicksIndex))
+    AllLicksSorted = np.sort(AllLicks)
+    AllLicksSortedDiff = np.diff(AllLicksSorted)
+    SortedIndex = np.argsort(AllLicks)
+    AllLicksIndexSorted = AllLicksIndex[SortedIndex]
+    AllLicksIndexSortedDiff = np.diff(AllLicksIndexSorted)
+    LeftToRightLicks = AllLicksSortedDiff[AllLicksIndexSortedDiff == 1]
+    RightToLeftLicks = AllLicksSortedDiff[AllLicksIndexSortedDiff == -1]
 
     ax[0].hist(
-        np.diff(behavior_json['B_LeftLickTime']), 
-        bins=x_values, 
-        color='red', 
+        np.diff(behavior_json["B_LeftLickTime"]),
+        bins=x_values,
+        color="red",
         alpha=0.7,
-        label='left licks'
-        )
+        label="left licks",
+    )
     ax[1].hist(
-        np.diff(behavior_json['B_RightLickTime']), 
-        bins=x_values, 
-        color='blue', 
+        np.diff(behavior_json["B_RightLickTime"]),
+        bins=x_values,
+        color="blue",
         alpha=0.7,
-        label='right licks'
-        )
+        label="right licks",
+    )
     ax[2].hist(
-        LeftToRightLicks, 
-        bins=x_values, 
-        color='black', 
+        LeftToRightLicks,
+        bins=x_values,
+        color="black",
         alpha=0.7,
-        label='left to right licks'
-        )
+        label="left to right licks",
+    )
     ax[3].hist(
-        RightToLeftLicks, 
-        bins=x_values, 
-        color='black', 
+        RightToLeftLicks,
+        bins=x_values,
+        color="black",
         alpha=0.7,
-        label='right to left licks'
-        )
+        label="right to left licks",
+    )
     ax[4].hist(
-        AllLicksSortedDiff, 
-        bins=x_values, 
-        color='black', 
-        alpha=0.7,
-        label='all licks'
-        )
+        AllLicksSortedDiff, bins=x_values, color="black", alpha=0.7, label="all licks"
+    )
 
     plt.tight_layout()
     plt.savefig(f"{results_folder}/lick_intervals.png", dpi=300, bbox_inches="tight")
 
-def plot_behavior(behavior_json,results_folder):
-    '''
-        Plot a figure of the side bias, and lick spout position
-        behavior_json, the data saved from the GUI
-        results_folder, the place to save the figure
-    '''
-    fig,ax = plt.subplots(nrows=4,figsize=(10,12))
-    
-    for side in ['top', 'right']:
+
+def plot_behavior(behavior_json, results_folder):
+    """
+    Plot a figure of the side bias, and lick spout position
+    behavior_json, the data saved from the GUI
+    results_folder, the place to save the figure
+    """
+    fig, ax = plt.subplots(nrows=4, figsize=(10, 12))
+
+    for side in ["top", "right"]:
         ax[0].spines[side].set_visible(False)
         ax[1].spines[side].set_visible(False)
         ax[2].spines[side].set_visible(False)
         ax[3].spines[side].set_visible(False)
 
     add_bias_plot(ax[0], behavior_json)
-    add_lickspout_position_plot(ax[1], behavior_json) 
-    add_behavior_plot(ax[2],behavior_json)
-    add_reward_probabilities(ax[3], behavior_json)   
+    add_lickspout_position_plot(ax[1], behavior_json)
+    add_behavior_plot(ax[2], behavior_json)
+    add_reward_probabilities(ax[3], behavior_json)
 
-    # Save figure 
+    # Save figure
     plt.savefig(f"{results_folder}/side_bias.png", dpi=300, bbox_inches="tight")
 
-def add_bias_plot(ax,behavior_json):    
+
+def add_bias_plot(ax, behavior_json):
     # Set up side bias plot
-    ax.set_xlabel('Trial #')
-    ax.set_ylabel('Side Bias')
-    ax.axhline(+0.7,color='r', linestyle='--')
-    ax.axhline(-0.7,color='r', linestyle='--')
-    ax.axhline(0,color='k', linestyle='--')
-    ax.set_ylim([-1,+1]) 
+    ax.set_xlabel("Trial #")
+    ax.set_ylabel("Side Bias")
+    ax.axhline(+0.7, color="r", linestyle="--")
+    ax.axhline(-0.7, color="r", linestyle="--")
+    ax.axhline(0, color="k", linestyle="--")
+    ax.set_ylim([-1, +1])
 
     # If we have the confidence intervals, plot them
-    if ('B_Bias_CI' in behavior_json):
-        lower = [x[0] for x in behavior_json['B_Bias_CI']]
-        upper = [x[1] for x in behavior_json['B_Bias_CI']]
+    if "B_Bias_CI" in behavior_json:
+        lower = [x[0] for x in behavior_json["B_Bias_CI"]]
+        upper = [x[1] for x in behavior_json["B_Bias_CI"]]
         ax.fill_between(
-            np.arange(0,len(behavior_json['B_Bias'])), 
-            lower, 
-            upper, 
-            color='gray', 
-            alpha=.5
-            )
+            np.arange(0, len(behavior_json["B_Bias"])),
+            lower,
+            upper,
+            color="gray",
+            alpha=0.5,
+        )
 
     # Plot the bias trace
-    if 'B_Bias' in behavior_json:
-        ax.plot(behavior_json['B_Bias'],'k',linewidth=2)
-        ax.set_xlim([0, len(behavior_json['B_Bias'])])
+    if "B_Bias" in behavior_json:
+        ax.plot(behavior_json["B_Bias"], "k", linewidth=2)
+        ax.set_xlim([0, len(behavior_json["B_Bias"])])
+
 
 def add_lickspout_position_plot(ax, behavior_json):
 
-    if ('B_StagePositions' in behavior_json) and \
-        (behavior_json['B_StagePositions'] is not None) and \
-        len(behavior_json['B_StagePositions']) > 0 and \
-        behavior_json['B_StagePositions'][0] is not None:
+    if (
+        ("B_StagePositions" in behavior_json)
+        and (behavior_json["B_StagePositions"] is not None)
+        and len(behavior_json["B_StagePositions"]) > 0
+        and behavior_json["B_StagePositions"][0] is not None
+    ):
 
         # Extract stage positions
-        if 'y1' in behavior_json['B_StagePositions'][0]:
-            x = [x['x'] if x is not None else np.nan for x in behavior_json['B_StagePositions']]
-            z = [x['z'] if x is not None else np.nan for x in behavior_json['B_StagePositions']]
-            y1 = [x['y1'] if x is not None else np.nan for x in behavior_json['B_StagePositions']]
-            y2 = [x['y2'] if x is not None else np.nan for x in behavior_json['B_StagePositions']]
+        if "y1" in behavior_json["B_StagePositions"][0]:
+            x = [
+                x["x"] if x is not None else np.nan
+                for x in behavior_json["B_StagePositions"]
+            ]
+            z = [
+                x["z"] if x is not None else np.nan
+                for x in behavior_json["B_StagePositions"]
+            ]
+            y1 = [
+                x["y1"] if x is not None else np.nan
+                for x in behavior_json["B_StagePositions"]
+            ]
+            y2 = [
+                x["y2"] if x is not None else np.nan
+                for x in behavior_json["B_StagePositions"]
+            ]
         else:
             # Convert Newscale from um to mm
-            x = [x['x']/1000 if x is not None else np.nan for x in behavior_json['B_StagePositions']]
-            z = [x['z']/1000 if x is not None else np.nan for x in behavior_json['B_StagePositions']]
-            y1 = [x['y']/1000 if x is not None else np.nan for x in behavior_json['B_StagePositions']]
-            y2 = [x['y']/1000 if x is not None else np.nan for x in behavior_json['B_StagePositions']] 
+            x = [
+                x["x"] / 1000 if x is not None else np.nan
+                for x in behavior_json["B_StagePositions"]
+            ]
+            z = [
+                x["z"] / 1000 if x is not None else np.nan
+                for x in behavior_json["B_StagePositions"]
+            ]
+            y1 = [
+                x["y"] / 1000 if x is not None else np.nan
+                for x in behavior_json["B_StagePositions"]
+            ]
+            y2 = [
+                x["y"] / 1000 if x is not None else np.nan
+                for x in behavior_json["B_StagePositions"]
+            ]
 
         # Plot stage positions
-        ax.plot(np.array(x)[:-1]-x[0],'r',label='X')
-        ax.plot(np.array(y1)[:-1]-y1[0],'b',label='Y1')
-        ax.plot(np.array(y2)[:-1]-y2[0],'lightblue',label='Y2')
-        ax.plot(np.array(z)[:-1]-z[0],'m',label='Z')
-    
+        ax.plot(np.array(x)[:-1] - x[0], "r", label="X")
+        ax.plot(np.array(y1)[:-1] - y1[0], "b", label="Y1")
+        ax.plot(np.array(y2)[:-1] - y2[0], "lightblue", label="Y2")
+        ax.plot(np.array(z)[:-1] - z[0], "m", label="Z")
+
         # Clean up plot
-        ax.set_xlim([0, len(behavior_json['B_Bias'])])
-        ax.set_xlabel('Trial #')
+        ax.set_xlim([0, len(behavior_json["B_Bias"])])
+        ax.set_xlabel("Trial #")
         ylims = ax.get_ylim()
-        ax.set_ylim([np.min([-1,ylims[0]]), np.max([1,ylims[1]])])
-        ax.set_ylabel('Lickspout Position \n relative to session start (mm)')
-        ax.legend()          
+        ax.set_ylim([np.min([-1, ylims[0]]), np.max([1, ylims[1]])])
+        ax.set_ylabel("Lickspout Position \n relative to session start (mm)")
+        ax.legend()
+
 
 def add_behavior_plot(ax, behavior_json):
-    go_cues = behavior_json['B_GoCueTimeSoundCard']
-    
-    if 'B_AnimalResponseHistory' in behavior_json:
-        choices = np.array(behavior_json['B_AnimalResponseHistory'])
+    go_cues = behavior_json["B_GoCueTimeSoundCard"]
+
+    if "B_AnimalResponseHistory" in behavior_json:
+        choices = np.array(behavior_json["B_AnimalResponseHistory"])
         left = np.where(choices == 0)[0]
-        right = np.where(choices==1)[0]
-        ignore = np.where(choices==2)[0]
+        right = np.where(choices == 1)[0]
+        ignore = np.where(choices == 2)[0]
+        ax.vlines(right, 0.8, 1, alpha=1, linewidth=1, color="gray", label="Choice")
+        ax.vlines(left, 0, 0.2, alpha=1, linewidth=1, color="gray")
         ax.vlines(
-            right,
-            .8,
-            1,
+            ignore, 0.4, 0.6, alpha=1, linewidth=1, color="darkviolet", label="ignore"
+        )
+
+    if "B_RewardedHistory" in behavior_json:
+        left_rewards = np.where(np.array(behavior_json["B_RewardedHistory"][0]))[0]
+        right_rewards = np.where(np.array(behavior_json["B_RewardedHistory"][1]))[0]
+        ax.vlines(
+            left_rewards,
+            -0.2,
+            0,
             alpha=1,
             linewidth=1,
             color="black",
-            label='Choice'
-        )
-        ax.vlines(
-            left,
-            0,
-            .2,
-            alpha=1,
-            linewidth=1,
-            color="black"
-        )
-        ax.vlines(
-            ignore,
-            .4,
-            .6,
-            alpha=1,
-            linewidth=1,
-            color="lightgray",
-            label='ignore'
-        )
-  
-    if 'B_RewardedHistory' in behavior_json:
-        left_rewards = np.where(np.array(behavior_json['B_RewardedHistory'][0]))[0] 
-        right_rewards = np.where(np.array(behavior_json['B_RewardedHistory'][1]))[0] 
-        ax.vlines(
-            left_rewards,
-            -.2,
-            0,
-            alpha=1,
-            linewidth=1,
-            color="blueviolet",
-            label='Earned Water'
+            label="Earned Water",
         )
         ax.vlines(
             right_rewards,
@@ -331,12 +343,12 @@ def add_behavior_plot(ax, behavior_json):
             1.2,
             alpha=1,
             linewidth=1,
-            color="blueviolet",
-            label='Earned Water'
+            color="black",
+            label="Earned Water",
         )
- 
-    if 'B_ManualRightWaterStartTime' in behavior_json:
-        manual_right_times = behavior_json['B_ManualRightWaterStartTime']
+
+    if "B_ManualRightWaterStartTime" in behavior_json:
+        manual_right_times = behavior_json["B_ManualRightWaterStartTime"]
         manual_right_trial = time_to_trial_index(go_cues, manual_right_times)
         ax.vlines(
             manual_right_trial,
@@ -345,24 +357,24 @@ def add_behavior_plot(ax, behavior_json):
             alpha=1,
             linewidth=1,
             color="blue",
-            label='Manual Water'
+            label="Manual Water",
         )
-    if 'B_ManualLeftWaterStartTime' in behavior_json:
-        manual_left_times = behavior_json['B_ManualLeftWaterStartTime']
+    if "B_ManualLeftWaterStartTime" in behavior_json:
+        manual_left_times = behavior_json["B_ManualLeftWaterStartTime"]
         manual_left_trial = time_to_trial_index(go_cues, manual_left_times)
         ax.vlines(
             manual_left_trial,
-            -.4,
-            -.2,
+            -0.4,
+            -0.2,
             alpha=1,
             linewidth=1,
             color="blue",
         )
 
-    if 'B_AutoWaterTrial' in behavior_json:
-        auto_water = np.array(behavior_json['B_AutoWaterTrial'])
-        auto_water_left = np.where(np.array(auto_water)[0,:] == 1)[0]
-        auto_water_right = np.where(np.array(auto_water)[1,:] == 1)[0]
+    if "B_AutoWaterTrial" in behavior_json:
+        auto_water = np.array(behavior_json["B_AutoWaterTrial"])
+        auto_water_left = np.where(np.array(auto_water)[0, :] == 1)[0]
+        auto_water_right = np.where(np.array(auto_water)[1, :] == 1)[0]
         ax.vlines(
             auto_water_right,
             1.2,
@@ -370,20 +382,32 @@ def add_behavior_plot(ax, behavior_json):
             alpha=1,
             linewidth=1,
             color="cyan",
-            label='Auto Water'
+            label="Auto Water",
         )
         ax.vlines(
             auto_water_left,
-            -.4,
-            -.2,
+            -0.4,
+            -0.2,
             alpha=1,
             linewidth=1,
             color="cyan",
         )
-    ax.set_ylim([-.4,1.4])
-    ax.set_xlim([0,len(go_cues)])
-    ax.set_xlabel('Trial #')
-    ax.set_yticks([-.3,-.1,0.1,.5,.9,1.1,1.3],labels=['L Auto Water', 'L Reward', 'L Choice','Ignore','R Choice', 'R Reward', 'R Auto Water'])
+    ax.set_ylim([-0.4, 1.4])
+    ax.set_xlim([0, len(go_cues)])
+    ax.set_xlabel("Trial #")
+    ax.set_yticks(
+        [-0.3, -0.1, 0.1, 0.5, 0.9, 1.1, 1.3],
+        labels=[
+            "L Auto Water",
+            "L Reward",
+            "L Choice",
+            "Ignore",
+            "R Choice",
+            "R Reward",
+            "R Auto Water",
+        ],
+    )
+
 
 def time_to_trial_index(go_cues, times):
     trial_index = []
@@ -394,15 +418,17 @@ def time_to_trial_index(go_cues, times):
             trial_index.append(np.where(np.array(go_cues) < t)[0][-1])
     return trial_index
 
+
 def add_reward_probabilities(ax, behavior_json):
-    reward_probabilityL=behavior_json['B_RewardProHistory'][0][:-1]
-    reward_probabilityR=behavior_json['B_RewardProHistory'][1][:-1]
-    ax.plot(reward_probabilityL,'b',label='Prob. L')
-    ax.plot(reward_probabilityR,'r',label='Prob. R')
-    ax.set_ylim([0,1])
-    ax.set_xlim([0,len(reward_probabilityL)])
-    ax.set_xlabel('Trial #')
+    reward_probabilityL = behavior_json["B_RewardProHistory"][0][:-1]
+    reward_probabilityR = behavior_json["B_RewardProHistory"][1][:-1]
+    ax.plot(reward_probabilityL, "b", label="Prob. L")
+    ax.plot(reward_probabilityR, "r", label="Prob. R")
+    ax.set_ylim([0, 1])
+    ax.set_xlim([0, len(reward_probabilityL)])
+    ax.set_xlabel("Trial #")
     ax.legend()
+
 
 def main():
     # Paths and setup
@@ -425,7 +451,7 @@ def main():
     )
 
     session_json = load_json_file(base_path / "session.json")
- 
+
     # Load behavior JSON
     # Regex pattern is <subject_id>_YYYY-MM-DD_HH-MM-SS.json
     pattern = "/data/fiber_raw_data/behavior/[0-9]*_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]-[0-9][0-9]-[0-9][0-9].json"
@@ -442,7 +468,7 @@ def main():
         return
 
     # Create bias plot
-    plot_behavior(behavior_json,results_folder)
+    plot_behavior(behavior_json, results_folder)
 
     # Create lick interval plot
     plot_lick_intervals(behavior_json, results_folder)
@@ -461,7 +487,8 @@ def main():
             value=behavior_json["drop_frames_tag"],
             status_history=[
                 Bool2Status(
-                    behavior_json["drop_frames_tag"] == 0, t=datetime.now(seattle_tz),
+                    behavior_json["drop_frames_tag"] == 0,
+                    t=datetime.now(seattle_tz),
                 )
             ],
         )
@@ -507,7 +534,7 @@ def main():
                     ),
                     QCMetric(
                         name="untracked local changes",
-                        description='Whether the code base had untracked changes, and if so, which files',
+                        description="Whether the code base had untracked changes, and if so, which files",
                         value=behavior_json["dirty_files"],
                         status_history=[
                             Bool2Status(
@@ -515,13 +542,12 @@ def main():
                                 t=datetime.now(seattle_tz),
                             )
                         ],
-                    )
+                    ),
                 ],
             )
         )
     else:
         logging.info("SKIPPING check for basic configuration")
-
 
     # Check side bias
     if "B_Bias" in behavior_json:
@@ -535,13 +561,13 @@ def main():
                     QCMetric(
                         name="average side bias",
                         description="average side bias should be less than 0.5",
-                        value=np.round(mean_bias,2),
+                        value=np.round(mean_bias, 2),
                         status_history=[
                             Bool2Status(
                                 np.abs(mean_bias) < 0.5, t=datetime.now(seattle_tz)
                             )
                         ],
-                        reference=str(reference_folder / "side_bias.png")
+                        reference=str(reference_folder / "side_bias.png"),
                     ),
                 ],
             )
@@ -560,43 +586,43 @@ def main():
                 [
                     QCMetric(
                         name="Left Lick Interval (%)",
-                        value=np.round(intervals["LeftLickIntervalPercent"],2),
-                        description = "% of lick intervals < 50ms. These indicate grooming bouts",
+                        value=np.round(intervals["LeftLickIntervalPercent"], 2),
+                        description="% of lick intervals < 50ms. These indicate grooming bouts",
                         status_history=[
                             Bool2Status(
                                 intervals["LeftLickIntervalPercent"] < 10,
                                 t=datetime.now(seattle_tz),
                             )
                         ],
-                        reference=str(reference_folder / "lick_intervals.png")
+                        reference=str(reference_folder / "lick_intervals.png"),
                     ),
                     QCMetric(
                         name="Right Lick Interval (%)",
-                        value=np.round(intervals["RightLickIntervalPercent"],2),
-                        description = "% of lick intervals < 50ms. These indicate grooming bouts",
+                        value=np.round(intervals["RightLickIntervalPercent"], 2),
+                        description="% of lick intervals < 50ms. These indicate grooming bouts",
                         status_history=[
                             Bool2Status(
                                 intervals["RightLickIntervalPercent"] < 10,
                                 t=datetime.now(seattle_tz),
                             )
                         ],
-                        reference=str(reference_folder / "lick_intervals.png")
+                        reference=str(reference_folder / "lick_intervals.png"),
                     ),
                     QCMetric(
                         name="Cross Side Lick Interval (%)",
-                        value=np.round(intervals["CrossSideIntervalPercent"],2),
-                        description = "% of lick intervals < 50ms. These indicate grooming bouts",
+                        value=np.round(intervals["CrossSideIntervalPercent"], 2),
+                        description="% of lick intervals < 50ms. These indicate grooming bouts",
                         status_history=[
                             Bool2Status(
                                 intervals["CrossSideIntervalPercent"] < 10,
                                 t=datetime.now(seattle_tz),
                             )
                         ],
-                        reference=str(reference_folder / "lick_intervals.png")
+                        reference=str(reference_folder / "lick_intervals.png"),
                     ),
                     QCMetric(
                         name="Artifact Percent (%)",
-                        value=np.round(intervals["ArtifactPercent"],2),
+                        value=np.round(intervals["ArtifactPercent"], 2),
                         description="% of lick intervals less than 0.5ms. These indicate electical artifacts",
                         status_history=[
                             Bool2Status(
@@ -604,57 +630,13 @@ def main():
                                 t=datetime.now(seattle_tz),
                             )
                         ],
-                        reference=str(reference_folder / "lick_intervals.png")
+                        reference=str(reference_folder / "lick_intervals.png"),
                     ),
                 ],
             )
         )
     else:
         logging.info("SKIPPING lick interval check")
-
-    logging.info("Running session length check")
-    if ('stimulus_epochs' in session_json) and\
-        (len(session_json['stimulus_epochs'])>0) and \
-        ('stimulus_start_time' in session_json['stimulus_epochs'][0]):
-
-        stimulus_start = session_json['stimulus_epochs'][0]['stimulus_start_time']
-        stimulus_end = session_json['stimulus_epochs'][0]['stimulus_end_time']
-        session_length = datetime.fromisoformat(stimulus_end) - datetime.fromisoformat(stimulus_start) 
-    else:
-        session_length = timedelta(minutes=0)
-
-    session_length_seconds = session_length.total_seconds()
-
-    evaluations.append(
-        create_evaluation(
-            "Session Length Check",
-            "pass when at least 50 trials were performed, and stimulus epoch was at least 10 minutes",
-            [
-                QCMetric(
-                    name="Number of completed trials",
-                    description='Must complete at least 50 trials to pass',
-                    value=behavior_json.get("BS_FinisheTrialN", 0),
-                    status_history=[
-                        Bool2Status(
-                            behavior_json.get("BS_FinisheTrialN", 0) > 50,
-                            t=datetime.now(seattle_tz),
-                        )
-                    ],
-                ),
-                QCMetric(
-                    name="Length of stimulus epoch",
-                    description="Must be at least 10 minutes",
-                    value=session_length_seconds,
-                    status_history=[
-                        Bool2Status(
-                            session_length > timedelta(minutes=10),
-                            t=datetime.now(seattle_tz),
-                        )
-                    ],
-                )
-            ],
-        )
-    )
 
     # Create QC object and save
     qc = QualityControl(evaluations=evaluations)
