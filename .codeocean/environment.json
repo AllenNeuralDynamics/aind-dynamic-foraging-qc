@@ -3,7 +3,8 @@
 	"base_image": "codeocean/jupyterlab:3.0.9-miniconda4.9.2-python3.8-ubuntu20.04",
 	"options": {
 		"registry_host_arg": true,
-		"git_ask_pass": true
+		"git_ask_pass": true,
+		"mount_secrets": true
 	},
 	"installers": {
 		"pip": {
@@ -19,10 +20,6 @@
 				{
 					"name": "aind-data-schema-models",
 					"version": "0.7.5"
-				},
-				{
-					"name": "aind-log-utils",
-					"version": "0.2.4"
 				},
 				{
 					"name": "aws-requests-auth",
@@ -53,26 +50,6 @@
 			"pre_install_options": {}
 		},
 		"vscode": {
-			"packages": [
-				{
-					"name": "REditorSupport.R"
-				},
-				{
-					"name": "continue.continue"
-				},
-				{
-					"name": "ms-python.python"
-				},
-				{
-					"name": "ms-toolsai.jupyter"
-				},
-				{
-					"name": "reageyao.bioSyntax"
-				},
-				{
-					"name": "saoudrizwan.claude-dev"
-				}
-			],
 			"version": "4.95.3"
 		}
 	}
