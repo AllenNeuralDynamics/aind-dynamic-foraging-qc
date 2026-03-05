@@ -1,4 +1,4 @@
-# hash:sha256:2368433a14a030b5a0aaeb9cf992a7d5d291c38cdd2d96f3f2190b951b1a4aa9
+# hash:sha256:bf2da42569fdc1f24f524938c8641d4eb6fdbf935cb07c835b6ec01245d89837
 ARG REGISTRY_HOST
 FROM $REGISTRY_HOST/codeocean/jupyterlab:3.0.9-miniconda4.9.2-python3.8-ubuntu20.04
 
@@ -24,10 +24,3 @@ RUN cd /.code-server \
     && rm code-server.tar.gz \
     && ln -s /.code-server/code-server-4.95.3-linux-amd64/bin/code-server /usr/bin/code-server \
     && mkdir -p /.vscode/extensions
-
-RUN code-server --extensions-dir="/.vscode/extensions" --install-extension reditorsupport.r \
-    && code-server --extensions-dir="/.vscode/extensions" --install-extension continue.continue \
-    && code-server --extensions-dir="/.vscode/extensions" --install-extension ms-python.python \
-    && code-server --extensions-dir="/.vscode/extensions" --install-extension ms-toolsai.jupyter \
-    && code-server --extensions-dir="/.vscode/extensions" --install-extension reageyao.biosyntax \
-    && code-server --extensions-dir="/.vscode/extensions" --install-extension saoudrizwan.claude-dev
