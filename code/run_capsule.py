@@ -8,7 +8,6 @@ from pathlib import Path
 from datetime import datetime, timezone, timedelta
 import pytz
 import matplotlib.pyplot as plt
-from aind_log_utils.log import setup_logging
 from aind_data_schema.core.quality_control import (
     QCEvaluation,
     QCMetric,
@@ -446,10 +445,6 @@ def main():
 
     data_disc_json = load_json_file(base_path / "data_description.json")
     asset_name = data_disc_json.get("name")
-    setup_logging(
-        "aind-dynamic-foraging-qc", subject_id=subject_id, asset_name=asset_name
-    )
-
     session_json = load_json_file(base_path / "session.json")
 
     # Load behavior JSON
