@@ -4,6 +4,7 @@ import glob
 import numpy as np
 from pathlib import Path
 from datetime import datetime
+import os
 import pytz
 import matplotlib.pyplot as plt
 from aind_data_schema.core.quality_control import (
@@ -15,6 +16,7 @@ from aind_data_schema.core.quality_control import (
     QualityControl,
 )
 from aind_data_schema_models.modalities import Modality
+from aind_logging import setup_logging
 
 
 def Bool2Status(boolean_value, t=None):
@@ -429,6 +431,8 @@ def add_reward_probabilities(ax, behavior_json):
 
 def main():
     # Paths and setup
+    process_name = os.getenv("PROCESS_NAME")
+    
     base_path = Path("/data/fiber_raw_data")
     results_folder = Path("../results/dynamic-foraging-qc")
     results_folder.mkdir(parents=True, exist_ok=True)
@@ -443,7 +447,11 @@ def main():
 
     data_disc_json = load_json_file(base_path / "data_description.json")
     asset_name = data_disc_json.get("name")
-    session_json = load_json_file(base_path / "session.json")
+    setup_logging(
+        process_name,
+        acquisition_name=asset_name,
+        process_name=process_name
+    )
 
     # Load behavior JSON
     # Regex pattern is <subject_id>_YYYY-MM-DD_HH-MM-SS.json
