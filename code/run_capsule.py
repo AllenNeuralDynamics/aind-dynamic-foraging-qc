@@ -1,11 +1,9 @@
 import logging
-import csv
 import json
-import os
 import glob
 import numpy as np
 from pathlib import Path
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
 import pytz
 import matplotlib.pyplot as plt
 from aind_data_schema.core.quality_control import (
