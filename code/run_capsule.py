@@ -18,6 +18,8 @@ from aind_data_schema.core.quality_control import (
 from aind_data_schema_models.modalities import Modality
 from aind_logging import setup_logging
 
+logger = logging.getLogger(__name__)
+
 
 def Bool2Status(boolean_value, t=None):
     """Convert a boolean value to a QCStatus object."""
@@ -37,7 +39,7 @@ def load_json_file(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
             return json.load(f)
     except FileNotFoundError:
-        logging.error(f"Error: {file_path} not found.")
+        logger.error(f"Error: {file_path} not found.")
 
 
 def create_evaluation(
@@ -431,9 +433,16 @@ def add_reward_probabilities(ax, behavior_json):
 
 def main():
     # Paths and setup
-    process_name = os.getenv("PROCESS_NAME")
-    
     base_path = Path("/data/fiber_raw_data")
+    process_name = os.getenv("PROCESS_NAME")
+    with open(base_path / "data_description.json", "r", encoding="utf-8") as f:
+        asset_name = json.load(f).get("name")
+    setup_logging(
+        process_name,
+        acquisition_name=asset_name,
+        process_name=process_name
+    )
+
     results_folder = Path("../results/dynamic-foraging-qc")
     results_folder.mkdir(parents=True, exist_ok=True)
     reference_folder = Path("dynamic-foraging-qc")
@@ -443,16 +452,9 @@ def main():
     subject_data = load_json_file(base_path / "subject.json")
     subject_id = subject_data.get("subject_id")
     if not subject_id:
-        logging.error("Error: Subject ID is missing from subject.json.")
+        logger.error("Error: Subject ID is missing from subject.json.")
 
-    data_disc_json = load_json_file(base_path / "data_description.json")
-    asset_name = data_disc_json.get("name")
-    setup_logging(
-        process_name,
-        acquisition_name=asset_name,
-        process_name=process_name
-    )
-
+    
     # Load behavior JSON
     # Regex pattern is <subject_id>_YYYY-MM-DD_HH-MM-SS.json
     pattern = "/data/fiber_raw_data/behavior/[0-9]*_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]-[0-9][0-9]-[0-9][0-9].json"
@@ -460,16 +462,17 @@ def main():
     if matching_behavior_files:
         behavior_json = load_json_file(matching_behavior_files[0])
     else:
-        logging.info("NO BEHAVIOR JSON, cannot run QC")
+        logger.info("NO BEHAVIOR JSON, cannot run QC")
         qc_file_path = results_folder / "no_behavior_to_qc.txt"
         # Create an empty file
         with open(qc_file_path, "w") as file:
             file.write("No behavior JSON file, cannot run QC")
-        print(f"Empty file created at: {qc_file_path}")
+        logger.error(f"Empty file created at: {qc_file_path}")
         return
 
     # Create bias plot
     plot_behavior(behavior_json, results_folder)
+    logger.info("Plot behavior")
 
     # Create lick interval plot
     plot_lick_intervals(behavior_json, results_folder)
@@ -479,7 +482,7 @@ def main():
     evaluations = []
 
     if "drop_frames_tag" in behavior_json:
-        logging.info("Running dropped frames check")
+        logger.info("Running dropped frames check")
         camera_metrics = []
         # If we have dropped frames, then cameras will be listed here with their recorded frames
         # iterate through each camera and report the number of dropped frames
@@ -495,7 +498,7 @@ def main():
         )
         for camera in behavior_json["frame_num"]:
             diff = behavior_json["trigger_length"] - behavior_json["frame_num"][camera]
-            logging.info("Running dropped frames check for camera {}".format(camera))
+            logger.info("Running dropped frames check for camera {}".format(camera))
             camera_metrics.append(
                 QCMetric(
                     name="dropped frames for camera {}".format(camera),
@@ -512,10 +515,10 @@ def main():
             )
         )
     else:
-        logging.info("SKIPPING dropped frames check, no drop_frames_tag")
+        logger.info("SKIPPING dropped frames check, no drop_frames_tag")
 
     if ("Experimenter" in behavior_json) and ("dirty_files" in behavior_json):
-        logging.info("Running check for basic configuration")
+        logger.info("Running check for basic configuration")
         evaluations.append(
             create_evaluation(
                 "Basic Configuration",
@@ -548,11 +551,11 @@ def main():
             )
         )
     else:
-        logging.info("SKIPPING check for basic configuration")
+        logger.info("SKIPPING check for basic configuration")
 
     # Check side bias
     if "B_Bias" in behavior_json:
-        logging.info("Running bias check")
+        logger.info("Running bias check")
         mean_bias = np.mean(behavior_json["B_Bias"])
         evaluations.append(
             create_evaluation(
@@ -574,11 +577,11 @@ def main():
             )
         )
     else:
-        logging.info("SKIPPING bias check, no B_Bias")
+        logger.info("SKIPPING bias check, no B_Bias")
 
     # Check side bias
     if ("B_LeftLickTime" in behavior_json) and ("B_RightLickTime" in behavior_json):
-        logging.info("Running lick interval check")
+        logger.info("Running lick interval check")
         intervals = calculate_lick_intervals(behavior_json)
         evaluations.append(
             create_evaluation(
@@ -637,7 +640,7 @@ def main():
             )
         )
     else:
-        logging.info("SKIPPING lick interval check")
+        logger.info("SKIPPING lick interval check")
 
     # Create QC object and save
     qc = QualityControl(evaluations=evaluations)
@@ -645,4 +648,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        logger.exception(e)
+        raise
