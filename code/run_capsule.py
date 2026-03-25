@@ -2,6 +2,7 @@ import logging
 import json
 import glob
 import numpy as np
+from dotenv import load_dotenv
 from pathlib import Path
 from datetime import datetime
 import os
@@ -434,6 +435,7 @@ def add_reward_probabilities(ax, behavior_json):
 def main():
     # Paths and setup
     base_path = Path("/data/fiber_raw_data")
+    load_dotenv(".env")
     process_name = os.getenv("PROCESS_NAME")
     with open(base_path / "data_description.json", "r", encoding="utf-8") as f:
         asset_name = json.load(f).get("name")

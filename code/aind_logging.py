@@ -60,17 +60,22 @@ def add_cloudwatch_handler(log_stream: str) -> None:
 
     handler = watchtower.CloudWatchLogHandler(
         log_stream_name=log_stream,
+        log_group="aind/internal-logs"
     )
-    handler.setFormatter(AindJsonFormatter())
 
-    # Re-use the AindContextFilter already attached to the console handler so
-    # acquisition_name / process_name are injected consistently.
+    # Re-use the AindJsonFormatter and AindContextFilter already attached to
+    # the console handler so CloudWatch logs are structured identically.
     root_logger = logging.getLogger()
+    formatter = AindJsonFormatter()
     for existing_handler in root_logger.handlers:
+        if isinstance(existing_handler.formatter, AindJsonFormatter):
+            formatter = existing_handler.formatter
         for f in existing_handler.filters:
             if isinstance(f, AindContextFilter):
                 handler.addFilter(f)
                 break
+
+    handler.setFormatter(formatter)
 
     root_logger.addHandler(handler)
     logging.info(
