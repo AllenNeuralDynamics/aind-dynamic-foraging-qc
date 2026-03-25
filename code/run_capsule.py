@@ -433,7 +433,7 @@ def add_reward_probabilities(ax, behavior_json):
 def main():
     # Paths and setup
     base_path = Path("/data/fiber_raw_data")
-    load_dotenv(".env")
+    load_dotenv("/code/.env")
     process_name = os.getenv("PROCESS_NAME")
     with open(base_path / "data_description.json", "r", encoding="utf-8") as f:
         asset_name = json.load(f).get("name")
