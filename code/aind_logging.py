@@ -78,9 +78,7 @@ def add_cloudwatch_handler(log_stream: str) -> None:
     handler.setFormatter(formatter)
 
     root_logger.addHandler(handler)
-    logging.info(
-        "Begin processing..."
-    )
+
 
 class AindJsonFormatter(logging.Formatter):
     """Formats log records as JSON with AIND standard fields.

@@ -444,7 +444,7 @@ def main():
         acquisition_name=asset_name,
         process_name=process_name
     )
-
+    logging.info("Begin processing...", extra={"event_type": "stage_start"})
     results_folder = Path("../results/dynamic-foraging-qc")
     results_folder.mkdir(parents=True, exist_ok=True)
     reference_folder = Path("dynamic-foraging-qc")
@@ -647,11 +647,15 @@ def main():
     # Create QC object and save
     qc = QualityControl(evaluations=evaluations)
     qc.write_standard_file(output_directory=str(results_folder))
-
+    logger.info("Pipeline stage completed", extra={"event_type": "stage_complete"})
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
+        logger.error(
+            "Pipeline stage failed",
+            extra={"event_type": "stage_error"}
+        )
         logger.exception(e)
         raise
