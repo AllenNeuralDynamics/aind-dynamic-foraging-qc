@@ -30,6 +30,10 @@
 					"version": "1.36.2"
 				},
 				{
+					"name": "dotenv",
+					"version": "0.9.9"
+				},
+				{
 					"name": "kachery-cloud",
 					"version": "0.4.10"
 				},
@@ -44,6 +48,14 @@
 				{
 					"name": "pandas",
 					"version": "2.0.3"
+				},
+				{
+					"name": "pyyaml",
+					"version": "6.0.3"
+				},
+				{
+					"name": "watchtower",
+					"version": "3.4.0"
 				}
 			],
 			"options": {},

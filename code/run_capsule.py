@@ -1,11 +1,11 @@
 import logging
-import csv
 import json
-import os
 import glob
 import numpy as np
+from dotenv import load_dotenv
 from pathlib import Path
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
+import os
 import pytz
 import matplotlib.pyplot as plt
 from aind_data_schema.core.quality_control import (
@@ -17,6 +17,7 @@ from aind_data_schema.core.quality_control import (
     QualityControl,
 )
 from aind_data_schema_models.modalities import Modality
+from aind_logging import setup_logging
 
 
 def Bool2Status(boolean_value, t=None):
@@ -432,6 +433,16 @@ def add_reward_probabilities(ax, behavior_json):
 def main():
     # Paths and setup
     base_path = Path("/data/fiber_raw_data")
+    load_dotenv(".env")
+    process_name = os.getenv("PROCESS_NAME")
+    with open(base_path / "data_description.json", "r", encoding="utf-8") as f:
+        asset_name = json.load(f).get("name")
+    setup_logging(
+        process_name,
+        acquisition_name=asset_name,
+        process_name=process_name
+    )
+    logging.info("Begin processing...", extra={"event_type": "stage_start"})
     results_folder = Path("../results/dynamic-foraging-qc")
     results_folder.mkdir(parents=True, exist_ok=True)
     reference_folder = Path("dynamic-foraging-qc")
@@ -443,10 +454,7 @@ def main():
     if not subject_id:
         logging.error("Error: Subject ID is missing from subject.json.")
 
-    data_disc_json = load_json_file(base_path / "data_description.json")
-    asset_name = data_disc_json.get("name")
-    session_json = load_json_file(base_path / "session.json")
-
+    
     # Load behavior JSON
     # Regex pattern is <subject_id>_YYYY-MM-DD_HH-MM-SS.json
     pattern = "/data/fiber_raw_data/behavior/[0-9]*_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]-[0-9][0-9]-[0-9][0-9].json"
@@ -459,11 +467,12 @@ def main():
         # Create an empty file
         with open(qc_file_path, "w") as file:
             file.write("No behavior JSON file, cannot run QC")
-        print(f"Empty file created at: {qc_file_path}")
+        logging.error(f"Empty file created at: {qc_file_path}")
         return
 
     # Create bias plot
     plot_behavior(behavior_json, results_folder)
+    logging.info("Plot behavior")
 
     # Create lick interval plot
     plot_lick_intervals(behavior_json, results_folder)
@@ -636,7 +645,15 @@ def main():
     # Create QC object and save
     qc = QualityControl(evaluations=evaluations)
     qc.write_standard_file(output_directory=str(results_folder))
-
+    logging.info("Pipeline stage completed", extra={"event_type": "stage_complete"})
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        logging.error(
+            "Pipeline stage failed",
+            extra={"event_type": "stage_error"}
+        )
+        logging.exception(e)
+        raise

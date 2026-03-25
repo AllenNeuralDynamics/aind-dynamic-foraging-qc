@@ -1,10 +1,10 @@
-# hash:sha256:bf2da42569fdc1f24f524938c8641d4eb6fdbf935cb07c835b6ec01245d89837
+# hash:sha256:f42419166abae4266b53b5692706ecf62eaae300321766044f54295e7b4dd195
 ARG REGISTRY_HOST
 FROM $REGISTRY_HOST/codeocean/jupyterlab:3.0.9-miniconda4.9.2-python3.8-ubuntu20.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG GIT_ASKPASS
-COPY git-askpass /
+COPY git-ask-pass /
 
 RUN pip install -U --no-cache-dir \
     aind-data-access-api[docdb]==0.17.1 \
@@ -12,13 +12,16 @@ RUN pip install -U --no-cache-dir \
     aind-data-schema-models==0.7.5 \
     aws-requests-auth==0.4.3 \
     boto3==1.36.2 \
+    dotenv==0.9.9 \
     kachery-cloud==0.4.10 \
     matplotlib==3.7.5 \
     numpy==1.24.4 \
-    pandas==2.0.3
+    pandas==2.0.3 \
+    pyyaml==6.0.3 \
+    watchtower==3.4.0
 
 ADD "https://github.com/coder/code-server/releases/download/v4.95.3/code-server-4.95.3-linux-amd64.tar.gz" /.code-server/code-server.tar.gz
-	
+
 RUN cd /.code-server \
     && tar -xvf code-server.tar.gz \
     && rm code-server.tar.gz \
