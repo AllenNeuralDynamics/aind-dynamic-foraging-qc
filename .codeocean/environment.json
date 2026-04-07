@@ -64,7 +64,7 @@
 	"env_variables": [
 		{
 			"name": "PROCESS_NAME",
-			"value": "ind-dynamic-foraging-qc"
+			"value": "aind-dynamic-foraging-qc"
 		}
 	]
 }

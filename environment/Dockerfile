@@ -1,4 +1,4 @@
-# hash:sha256:48ca3d1c44f24c4fc907baf2414c5bc097fe6ca662aeb01dc13ed2b7a39d9112
+# hash:sha256:14a608ee47186ea807153add57ee424619a646a1b1be2dda799b4116aa0bf0a4
 ARG REGISTRY_HOST
 FROM $REGISTRY_HOST/codeocean/jupyterlab:3.0.9-miniconda4.9.2-python3.8-ubuntu20.04
 
@@ -6,7 +6,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG GIT_ASKPASS
 COPY git-ask-pass /
 
-ENV PROCESS_NAME=ind-dynamic-foraging-qc
+ENV PROCESS_NAME=aind-dynamic-foraging-qc
 
 RUN pip install -U --no-cache-dir \
     aind-data-access-api[docdb]==0.17.1 \
