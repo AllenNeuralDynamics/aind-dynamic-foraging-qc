@@ -2,7 +2,6 @@ import logging
 import json
 import glob
 import numpy as np
-from dotenv import load_dotenv
 from pathlib import Path
 from datetime import datetime
 import os
@@ -433,14 +432,14 @@ def add_reward_probabilities(ax, behavior_json):
 def main():
     # Paths and setup
     base_path = Path("/data/fiber_raw_data")
-    load_dotenv("/code/.env")
     process_name = os.getenv("PROCESS_NAME")
     with open(base_path / "data_description.json", "r", encoding="utf-8") as f:
         asset_name = json.load(f).get("name")
     setup_logging(
         process_name,
         acquisition_name=asset_name,
-        process_name=process_name
+        process_name=process_name,
+        pipeline_name=os.getenv("PIEPLINE_NAME","")
     )
     logging.info("Begin processing...", extra={"event_type": "stage_start"})
     results_folder = Path("../results/dynamic-foraging-qc")

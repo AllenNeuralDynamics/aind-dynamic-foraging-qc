@@ -30,10 +30,6 @@
 					"version": "1.36.2"
 				},
 				{
-					"name": "dotenv",
-					"version": "0.9.9"
-				},
-				{
 					"name": "kachery-cloud",
 					"version": "0.4.10"
 				},
@@ -64,5 +60,11 @@
 		"vscode": {
 			"version": "4.95.3"
 		}
-	}
+	},
+	"env_variables": [
+		{
+			"name": "PROCESS_NAME",
+			"value": "aind-dynamic-foraging-qc"
+		}
+	]
 }
